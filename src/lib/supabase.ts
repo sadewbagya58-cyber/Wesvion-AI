@@ -21,17 +21,25 @@ export interface LeadInsertPayload {
   status?: string;
 }
 
+export interface SaveLeadResult {
+  success: boolean;
+  error?: string | null;
+}
+
 /**
- * Inserts a captured lead into Supabase with error recovery.
- * Never throws an error or breaks execution if Supabase is offline/unreachable.
+ * Inserts a captured lead into Supabase.
+ * Executes a pure INSERT statement (without RETURNING/SELECT) to comply with RLS insert-only policies.
  */
-export async function saveLeadToSupabase(payload: LeadInsertPayload): Promise<{ success: boolean; leadId?: string }> {
+export async function saveLeadToSupabase(payload: LeadInsertPayload): Promise<SaveLeadResult> {
   if (!supabase) {
-    return { success: false };
+    return {
+      success: false,
+      error: "Supabase client not initialized (missing environment variables)",
+    };
   }
 
   try {
-    const { data, error } = await supabase
+    const { error, status } = await supabase
       .from("leads")
       .insert([
         {
@@ -46,16 +54,28 @@ export async function saveLeadToSupabase(payload: LeadInsertPayload): Promise<{ 
           source: payload.source || "AI Guest Agent",
           status: payload.status || "new",
         },
-      ])
-      .select("id")
-      .single();
+      ]);
 
     if (error) {
-      return { success: false };
+      return {
+        success: false,
+        error: error.message,
+      };
     }
 
-    return { success: true, leadId: data?.id };
-  } catch {
-    return { success: false };
+    if (status === 201 || status === 200) {
+      return { success: true, error: null };
+    }
+
+    return {
+      success: false,
+      error: `Supabase returned status code ${status}`,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Database insertion failed";
+    return {
+      success: false,
+      error: message,
+    };
   }
 }

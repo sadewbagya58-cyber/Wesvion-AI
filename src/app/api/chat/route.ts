@@ -110,9 +110,21 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   const isBooking = lower.includes("book") || lower.includes("stay") || lower.includes("reserve");
 
   if (isEmail || (isBooking && (lower.includes("august") || lower.includes("night") || lower.includes("guest")))) {
-    // Extract email if present
     const emailMatch = userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
     const email = emailMatch ? emailMatch[0] : null;
+
+    // Extract name if "my name is X" format
+    const nameMatch = userMessage.match(/(?:my name is|i'm|im)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i);
+    const name = nameMatch ? nameMatch[1] : null;
+
+    // Extract dates if YYYY-MM-DD or Month Day format
+    const datesMatch = userMessage.match(/(?:august|aug)\s+(\d{1,2})\s+to\s+(?:august|aug)\s+(\d{1,2})/i);
+    const checkIn = datesMatch ? `2026-08-${datesMatch[1].padStart(2, "0")}` : null;
+    const checkOut = datesMatch ? `2026-08-${datesMatch[2].padStart(2, "0")}` : null;
+
+    // Extract guest count
+    const guestMatch = userMessage.match(/(\d+)\s+guest/i);
+    const guestCount = guestMatch ? parseInt(guestMatch[1], 10) : null;
 
     return {
       reply:
@@ -121,12 +133,12 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
       leadCaptured: true,
       staffAlerted: false,
       lead: {
-        name: null,
-        email: email,
+        name,
+        email,
         phone: null,
-        checkIn: null,
-        checkOut: null,
-        guestCount: null,
+        checkIn,
+        checkOut,
+        guestCount,
         message: userMessage,
       },
     };
@@ -283,19 +295,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Lead Saving Logic with Supabase & Duplicate Protection
-    let savedLeadId: string | undefined = undefined;
+    // Lead Saving Logic with Supabase Execution
+    let leadSaved = false;
 
     if (agentResponse.leadCaptured && !agentResponse.staffAlerted) {
       const leadInfo = agentResponse.lead;
+      const extractedEmail =
+        leadInfo?.email || userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0] || null;
+      const extractedName =
+        leadInfo?.name || userMessage.match(/(?:my name is|i'm|im)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i)?.[1] || null;
+
       const hasContactOrDates =
-        leadInfo?.email || leadInfo?.phone || leadInfo?.name || leadInfo?.checkIn || leadInfo?.checkOut;
+        Boolean(extractedEmail) || Boolean(leadInfo?.phone) || Boolean(extractedName) || Boolean(leadInfo?.checkIn);
 
       if (hasContactOrDates || userMessage.toLowerCase().includes("book") || userMessage.toLowerCase().includes("@")) {
         const payloadToInsert: LeadInsertPayload = {
           property_name: "Aura Boutique Hotel & Villa",
-          guest_name: leadInfo?.name || null,
-          guest_email: leadInfo?.email || (userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0] ?? null),
+          guest_name: extractedName,
+          guest_email: extractedEmail,
           guest_phone: leadInfo?.phone || null,
           check_in: leadInfo?.checkIn || null,
           check_out: leadInfo?.checkOut || null,
@@ -306,9 +323,7 @@ export async function POST(req: NextRequest) {
         };
 
         const dbResult = await saveLeadToSupabase(payloadToInsert);
-        if (dbResult.success) {
-          savedLeadId = dbResult.leadId;
-        }
+        leadSaved = dbResult.success;
       }
     }
 
@@ -316,8 +331,8 @@ export async function POST(req: NextRequest) {
       reply: agentResponse.reply,
       badge: agentResponse.badge,
       leadCaptured: agentResponse.leadCaptured,
+      leadSaved,
       staffAlerted: agentResponse.staffAlerted,
-      leadSaved: Boolean(savedLeadId),
       latencyMs: Date.now() - startTime,
       source: responseSource,
     });
@@ -327,8 +342,8 @@ export async function POST(req: NextRequest) {
       reply: fallbackData.reply,
       badge: fallbackData.badge,
       leadCaptured: false,
-      staffAlerted: false,
       leadSaved: false,
+      staffAlerted: false,
       latencyMs: Date.now() - startTime,
       source: "fallback-critical-error",
     });
