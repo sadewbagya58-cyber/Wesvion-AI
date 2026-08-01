@@ -1,0 +1,282 @@
+[
+  {
+    "category": "Room Availability & Pricing",
+    "faqs": [
+      {
+        "id": 1,
+        "question": "Do you have rooms available for [Date]?",
+        "answer": "To check real-time availability for [Date], please let me know your expected Check-in and Check-out dates along with the number of guests."
+      },
+      {
+        "id": 2,
+        "question": "What are your room rates per night?",
+        "answer": "Our room rates start from LKR 15,000 per night for a Standard Deluxe Double Room. Rates vary depending on the room type, meal plan, and season."
+      },
+      {
+        "id": 3,
+        "question": "What types of rooms do you have (e.g., Deluxe, Suite, Ocean View)?",
+        "answer": "We offer Standard Deluxe Rooms, Ocean View Suites, and Family Rooms. Would you like me to send photos of a specific room type?"
+      },
+      {
+        "id": 4,
+        "question": "What is the difference between Full Board, Half Board, and Bed & Breakfast?",
+        "answer": "Bed & Breakfast (BB) includes Room + Breakfast. Half Board (HB) includes Room + Breakfast + Dinner. Full Board (FB) includes Room + Breakfast + Lunch + Dinner."
+      },
+      {
+        "id": 5,
+        "question": "Do you offer any discounts for long stays or group bookings?",
+        "answer": "Yes! We offer a 10% to 15% discount for stays longer than 3 nights or for bookings with more than 3 rooms. Please share your group size for a custom quote."
+      },
+      {
+        "id": 6,
+        "question": "Are taxes and service charges included in the price?",
+        "answer": "Yes, all quoted prices include government taxes and service charges. There are no hidden fees."
+      },
+      {
+        "id": 7,
+        "question": "Is breakfast included in the room rate?",
+        "answer": "Breakfast is included in our Bed & Breakfast (BB), Half Board (HB), and Full Board (FB) packages. For Room Only bookings, breakfast can be added separately."
+      },
+      {
+        "id": 8,
+        "question": "What is the maximum capacity for a single room?",
+        "answer": "Our Deluxe Rooms accommodate up to 2 adults and 1 child. Family Suites accommodate up to 4 adults."
+      },
+      {
+        "id": 9,
+        "question": "Do you have extra beds available, and how much do they cost?",
+        "answer": "Yes, extra beds/mattresses are available for LKR 3,500 per night including breakfast."
+      },
+      {
+        "id": 10,
+        "question": "Can I get a room with a sea view / balcony?",
+        "answer": "Yes, our Ocean View Suites come with a private balcony facing the sea. Subject to availability at the time of booking."
+      }
+    ]
+  },
+  {
+    "category": "Check-in, Check-out & Policies",
+    "faqs": [
+      {
+        "id": 11,
+        "question": "What are your standard check-in and check-out times?",
+        "answer": "Our standard Check-in time is 2:00 PM and Check-out time is 11:00 AM."
+      },
+      {
+        "id": 12,
+        "question": "Is early check-in or late check-out available?",
+        "answer": "Early check-in (from 10:00 AM) or late check-out (until 2:00 PM) is subject to room availability upon arrival. Charges may apply."
+      },
+      {
+        "id": 13,
+        "question": "Can we check in late at night (e.g., after 10 PM)?",
+        "answer": "Yes, our Reception operates 24/7. Kindly inform us of your estimated arrival time in advance so we can prepare your room."
+      },
+      {
+        "id": 14,
+        "question": "What documents do I need to bring for check-in?",
+        "answer": "Sri Lankan citizens need to present a valid NIC or Driving License. Foreign guests must present a valid Passport upon arrival."
+      },
+      {
+        "id": 15,
+        "question": "What is your cancellation and refund policy?",
+        "answer": "Cancellations made 7 days prior to check-in receive a 100% refund. Cancellations made within 3-7 days receive a 50% refund. Cancellations under 3 days are non-refundable."
+      },
+      {
+        "id": 16,
+        "question": "Do you allow pets in the hotel?",
+        "answer": "Unfortunately, pets are not allowed inside the hotel premises to ensure comfort for all guests."
+      },
+      {
+        "id": 17,
+        "question": "Is smoking allowed in the rooms or balconies?",
+        "answer": "Smoking inside the rooms is strictly prohibited. However, smoking is allowed on private room balconies and designated outdoor areas."
+      },
+      {
+        "id": 18,
+        "question": "Do you require an advance deposit to confirm the booking?",
+        "answer": "Yes, a 50% advance deposit is required via bank transfer or online payment link to lock in your booking."
+      }
+    ]
+  },
+  {
+    "category": "Amenities & Facilities",
+    "faqs": [
+      {
+        "id": 19,
+        "question": "Do you have a swimming pool, and what are its opening hours?",
+        "answer": "Yes, we have an outdoor swimming pool open daily for guests from 7:00 AM to 8:00 PM."
+      },
+      {
+        "id": 20,
+        "question": "Is free Wi-Fi available in the rooms and public areas?",
+        "answer": "Yes, complimentary high-speed Wi-Fi is available across all rooms, the restaurant, and lobby areas."
+      },
+      {
+        "id": 21,
+        "question": "Is parking available on-site, and is it free?",
+        "answer": "Yes, we provide free secure parking on-site for all in-house guests."
+      },
+      {
+        "id": 22,
+        "question": "Do you have a gym / spa / sauna facility?",
+        "answer": "We have an Ayurvedic Spa offering traditional massages. Spa services require prior reservation."
+      },
+      {
+        "id": 23,
+        "question": "Do you provide driver accommodation / driver quarters?",
+        "answer": "Yes, complimentary driver quarters and meals are available for driver-accompanied bookings."
+      },
+      {
+        "id": 24,
+        "question": "Are the rooms air-conditioned?",
+        "answer": "Yes, all our rooms are equipped with individual inverter air conditioners and ceiling fans."
+      },
+      {
+        "id": 25,
+        "question": "Do the rooms have hot water facilities?",
+        "answer": "Yes, all attached bathrooms have 24/7 hot and cold shower facilities."
+      },
+      {
+        "id": 26,
+        "question": "Do you have iron and ironing board facilities in the room?",
+        "answer": "An iron and ironing board are provided upon request from housekeeping free of charge."
+      },
+      {
+        "id": 27,
+        "question": "Is there a mini-fridge or tea/coffee maker in the room?",
+        "answer": "Yes, every room comes equipped with an electric kettle, complimentary tea/coffee setup, and a mini-fridge."
+      },
+      {
+        "id": 28,
+        "question": "Is there a safe inside the room for valuables?",
+        "answer": "Yes, digital electronic safes are available inside all guest wardrobes."
+      }
+    ]
+  },
+  {
+    "category": "Food, Dining & Day-Outing",
+    "faqs": [
+      {
+        "id": 29,
+        "question": "Do you offer day-out packages? What is included?",
+        "answer": "Yes! Our Day-Out package is LKR 3,500/person (Minimum 5 pax). Includes Welcome Drink, Buffet Lunch, Evening Tea/Snacks, and Pool Access (9 AM - 5 PM)."
+      },
+      {
+        "id": 30,
+        "question": "What are the buffet times for Breakfast, Lunch, and Dinner?",
+        "answer": "Breakfast: 7:30 AM - 10:00 AM | Lunch: 12:30 PM - 2:30 PM | Dinner: 7:30 PM - 10:00 PM."
+      },
+      {
+        "id": 31,
+        "question": "Do you have a restaurant / bar on-site?",
+        "answer": "Yes, we have an multi-cuisine restaurant and a beachside lounge bar."
+      },
+      {
+        "id": 32,
+        "question": "Can you share your food and drinks menu?",
+        "answer": "Sure! I can send our Digital Menu (PDF) right here on WhatsApp. Would you like to see it?"
+      },
+      {
+        "id": 33,
+        "question": "Do you cater to specific dietary requirements (e.g., Vegetarian, Vegan, Halal, Gluten-free)?",
+        "answer": "Yes, our chefs can customize meals for Vegetarian, Vegan, Halal, or Gluten-Free diets. Please inform us before arrival."
+      },
+      {
+        "id": 34,
+        "question": "Is room service available 24/7?",
+        "answer": "Room service is available from 6:30 AM to 11:00 PM daily."
+      },
+      {
+        "id": 35,
+        "question": "Can you arrange a private candlelight dinner or beach dinner?",
+        "answer": "Yes! We set up romantic 4-course beachside Candlelight Dinners for LKR 12,000 per couple."
+      },
+      {
+        "id": 36,
+        "question": "Are outside food and liquor allowed inside the hotel? Is there a corkage fee?",
+        "answer": "Outside food is not permitted. Outside liquor is allowed with a corkage fee of LKR 2,000 per bottle."
+      }
+    ]
+  },
+  {
+    "category": "Location, Transport & Special Requests",
+    "faqs": [
+      {
+        "id": 37,
+        "question": "What is your exact location / Google Maps link?",
+        "answer": "We are located at Beach Road, Bentota. Here is our exact location link: https://maps.google.com"
+      },
+      {
+        "id": 38,
+        "question": "How far are you from the airport / train station?",
+        "answer": "We are roughly 2 hours (90 km) from Katunayake International Airport (CMB) and 5 minutes from the local Railway Station."
+      },
+      {
+        "id": 39,
+        "question": "Do you provide airport pick-up and drop-off services? What is the cost?",
+        "answer": "Yes, private airport transfers via air-conditioned car/van are available starting at LKR 16,000 per way."
+      },
+      {
+        "id": 40,
+        "question": "Can you help us arrange local tours, taxis, or tuk-tuks?",
+        "answer": "Yes, our front desk can arrange reliable local transport and day tours anytime."
+      },
+      {
+        "id": 41,
+        "question": "What are the nearest tourist attractions or beaches?",
+        "answer": "We are right on the main beach! Nearby attractions include Water Sports Center (1 km), Turtle Hatchery (3 km), and Brief Garden (8 km)."
+      },
+      {
+        "id": 42,
+        "question": "Is the beach within walking distance from the hotel?",
+        "answer": "Yes! The hotel has direct private access to the sandy beach, just a 1-minute walk from your room."
+      },
+      {
+        "id": 43,
+        "question": "Can we host a small birthday party / private function at the hotel?",
+        "answer": "Yes! We have garden and poolside venues perfect for small functions of 20-100 guests. Contact our events team for details."
+      },
+      {
+        "id": 44,
+        "question": "Do you decorate rooms for honeymoons or anniversaries? How much does it cost?",
+        "answer": "Yes, special Bed & Bathroom Flower Decoration packages are available for LKR 4,000."
+      }
+    ]
+  },
+  {
+    "category": "Payments & Booking Process",
+    "faqs": [
+      {
+        "id": 45,
+        "question": "How can I confirm my booking?",
+        "answer": "To confirm your booking, simply share your full name, phone number, stay dates, and deposit receipt once transferred."
+      },
+      {
+        "id": 46,
+        "question": "What payment methods do you accept (Credit Card, Bank Transfer, Cash)?",
+        "answer": "We accept Bank Transfers, Cash, and major Credit/Debit Cards (Visa, MasterCard, Amex)."
+      },
+      {
+        "id": 47,
+        "question": "Can I pay online via a credit card link?",
+        "answer": "Yes, we can send a secure PayHere / WebXPay Credit Card payment link directly to your WhatsApp."
+      },
+      {
+        "id": 48,
+        "question": "Can I pay upon arrival at the hotel?",
+        "answer": "The remaining 50% balance can be paid upon check-in. The initial 50% deposit must be paid to hold the room."
+      },
+      {
+        "id": 49,
+        "question": "I have made the advance payment. Where should I send the receipt/slip?",
+        "answer": "Please send the payment slip image right here in this chat! I will verify it with our accounts team and send your confirmation voucher."
+      },
+      {
+        "id": 50,
+        "question": "Can I talk to a human receptionist or manager, please?",
+        "answer": "Of course! I am transferring this chat to our human Duty Manager now. Someone will reach out to you within 5 minutes. Thank you!"
+      }
+    ]
+  }
+]

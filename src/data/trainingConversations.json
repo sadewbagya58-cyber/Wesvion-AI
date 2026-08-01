@@ -1,0 +1,326 @@
+[
+  {
+    "id": 1,
+    "title": "Basic Booking & Price Inquiry",
+    "category": "booking",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "Hi, do you have rooms available for next Saturday?"
+      },
+      {
+        "role": "assistant",
+        "message": "Hello! 👋 Yes, we do! May I know how many guests will be staying and how many nights you plan to stay?"
+      },
+      {
+        "role": "guest",
+        "message": "2 adults, just for 1 night (Saturday to Sunday)."
+      },
+      {
+        "role": "assistant",
+        "message": "Great! We have our Deluxe Ocean View Room available for next Saturday.\n\n🛏️ Room: Deluxe Double\n🍽️ Meal Plan: Bed & Breakfast\n💵 Price: LKR 18,000 net per night\n\nWould you like me to send some photos of the room?"
+      },
+      {
+        "role": "guest",
+        "message": "Yes please, send photos."
+      },
+      {
+        "role": "assistant",
+        "message": "(Sends 3 Room Images) Here are the photos of our Deluxe Ocean View Room! Would you like to reserve this room for next Saturday?"
+      },
+      {
+        "role": "guest",
+        "message": "Yes, how can I reserve?"
+      },
+      {
+        "role": "assistant",
+        "message": "Excellent! I can help you with that. Could you please share:\n\nFull Name\nEmail Address\nContact Number\n\nOnce shared, I’ll send you the payment link for a 50% advance deposit to lock in your booking! 🌊"
+      }
+    ],
+    "expectedBehaviours": [
+      "Ask for missing stay details",
+      "Explain available room, meal plan, and rate clearly",
+      "Offer room photos",
+      "Collect contact details",
+      "Explain the 50% advance process",
+      "Do not confirm a real booking without a PMS and payment integration"
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Day-Outing Package Query",
+    "category": "day_outing",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "Hi, can I get details about your day-out package?"
+      },
+      {
+        "role": "assistant",
+        "message": "Hi there! 😊 Here are the details for our Day-Out Package:\n\n💵 Price: LKR 3,500 net per person (Minimum 5 pax)\n⏰ Time: 9:00 AM – 5:00 PM\n🍹 Includes: Welcome Drink, Buffet Lunch, Evening Tea/Snacks & Swimming Pool Access.\n\nHow many people are planning to join?"
+      },
+      {
+        "role": "guest",
+        "message": "We are a group of 8 adults. What about kids' charges?"
+      },
+      {
+        "role": "assistant",
+        "message": "Children under 5 years old stay Free of charge! For kids aged 5 to 10, we offer a 50% discount (LKR 1,750 net per child)."
+      },
+      {
+        "role": "guest",
+        "message": "Okay, can we bring outside drinks or alcohol?"
+      },
+      {
+        "role": "assistant",
+        "message": "Outside food is not allowed on the premises. However, outside liquor is allowed! There is a corkage fee of LKR 2,000 per bottle, or a LKR 5,000 flat rate for the entire group. Would you like to check available dates for your visit?"
+      }
+    ],
+    "expectedBehaviours": [
+      "Explain the full day-out package",
+      "Ask for group size",
+      "Explain child pricing",
+      "Explain outside-food and liquor rules",
+      "Offer to check demo availability"
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Late Check-in & Special Request",
+    "category": "special_request",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "Hi, we want to book a room for Friday, but we can only arrive around 11 PM. Is that okay?"
+      },
+      {
+        "role": "assistant",
+        "message": "Hello! Yes, absolutely! 🌙 Our reception operates 24/7, so a late check-in is not a problem at all. Just let us know your estimated arrival time once your booking is confirmed."
+      },
+      {
+        "role": "guest",
+        "message": "Also, it's my wife's birthday. Can you arrange a small room decoration?"
+      },
+      {
+        "role": "assistant",
+        "message": "Happy Birthday to her in advance! 🎉 Yes, we can arrange a special Bed & Room Flower Decoration for LKR 4,000. We can also organize a 1kg Chocolate Cake for LKR 3,500 delivered to your room at midnight!"
+      },
+      {
+        "role": "guest",
+        "message": "That sounds great! Please add both the cake and decoration."
+      },
+      {
+        "role": "assistant",
+        "message": "Perfect! I have added the Room Decoration and Birthday Cake to your request. Let me draft your booking details now..."
+      }
+    ],
+    "expectedBehaviours": [
+      "Confirm the late check-in policy",
+      "Respond warmly to celebration requests",
+      "Offer decoration and cake upsells",
+      "Add requests to the booking enquiry state",
+      "Do not claim a real booking modification without a connected booking system"
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Food & Dietary Restrictions",
+    "category": "dietary",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "Hi, do you have halal or vegetarian food options in your lunch buffet?"
+      },
+      {
+        "role": "assistant",
+        "message": "Hello! Yes, we do. Our daily buffet features clearly labeled Vegetarian and Vegan sections. All our chicken and meat items are 100% Halal certified."
+      },
+      {
+        "role": "guest",
+        "message": "My daughter has a severe peanut allergy. Can the chef prepare something safe for her?"
+      },
+      {
+        "role": "assistant",
+        "message": "Thank you for informing us! 🛑 Guest safety is our top priority. Our Executive Chef can prepare a separate, completely peanut-free meal for your daughter during your stay. I will place a high-priority note on your booking profile right away!"
+      }
+    ],
+    "expectedBehaviours": [
+      "Explain vegetarian, vegan, and halal support",
+      "Treat severe allergy requests as high priority",
+      "Use cautious food-allergy language",
+      "Recommend direct chef or hotel-staff confirmation",
+      "Do not guarantee a completely allergen-free kitchen environment"
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Payment Slip Submission & Automated Confirmation",
+    "category": "payment",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "(Sends an Image of a Bank Payment Slip)"
+      },
+      {
+        "role": "assistant",
+        "message": "(Processes image via Vision API) Thank you! I have received your payment slip for LKR 9,000 transferred to our Commercial Bank account. 🧾\n\nGive me just a minute while I verify this transaction with our accounts team..."
+      },
+      {
+        "role": "assistant",
+        "message": "(After auto-verifying with backend) Your payment is verified! 🎉\n\n📄 Booking ID: #BK-8842\n📅 Check-in: 15th Aug 2026 (2:00 PM)\n👤 Guest Name: Nimal Perera\n\nYour booking is officially confirmed! I have sent the confirmation voucher to your email. We look forward to hosting you! 🌴"
+      }
+    ],
+    "expectedBehaviours": [
+      "Detect a possible payment-slip upload",
+      "Acknowledge receipt",
+      "Mark it as pending staff verification",
+      "Do not claim payment verification without a real banking or payment integration",
+      "Do not generate a fake booking ID",
+      "Do not confirm a booking in the current demo"
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Complaint Handling & Human Handover",
+    "category": "complaint",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "I paid the deposit yesterday but still haven't received any email confirmation! This is really poor service. I want to cancel my reservation!"
+      },
+      {
+        "role": "assistant",
+        "message": "I am truly sorry for the inconvenience and frustration caused! 🙏 Please don't worry. I am escalating your chat directly to our Duty Manager right now.\n\n👤 Manager Name: Mr. Kamal\n📱 Status: Connecting...\n\nHe will personally look into your payment transaction and respond on this WhatsApp chat within 5 minutes. Please stay tuned."
+      }
+    ],
+    "expectedBehaviours": [
+      "Detect angry or frustrated sentiment",
+      "Apologize sincerely",
+      "Avoid arguing",
+      "Trigger human handoff",
+      "Do not invent a manager name unless configured",
+      "Do not promise a five-minute response time",
+      "Use Manager Follow-up Requested or Staff Handoff Triggered"
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Location & Transport Inquiry",
+    "category": "transport",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "Hi, how far is the hotel from the Colombo Airport?"
+      },
+      {
+        "role": "assistant",
+        "message": "Hello! We are located in Bentota, which is about 90 km (1.5 to 2 hours drive) from the Bandaranaike International Airport (CMB) via the Southern Expressway."
+      },
+      {
+        "role": "guest",
+        "message": "Do you provide airport pick-up? How much does it cost?"
+      },
+      {
+        "role": "assistant",
+        "message": "Yes, we offer private airport transfers!\n\n🚗 Car (Up to 3 guests): LKR 16,000 net\n🚐 Van (Up to 7 guests): LKR 22,000 net\n(Highway toll fees are included)\n\nWould you like us to schedule a vehicle for your flight arrival?"
+      }
+    ],
+    "expectedBehaviours": [
+      "Explain airport distance and estimated travel time",
+      "Explain car and van pricing",
+      "Mention capacity",
+      "Offer a transport request preview",
+      "Do not claim a vehicle has been scheduled without a real transport integration"
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Driver Accommodation & Facility Check",
+    "category": "facilities",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "Hi, we are travelling with a private driver. Do you have driver accommodation?"
+      },
+      {
+        "role": "assistant",
+        "message": "Hello! Yes, we provide complimentary (Free) driver accommodation and meals for all our in-house guests' private drivers."
+      },
+      {
+        "role": "guest",
+        "message": "Is the driver parking safe?"
+      },
+      {
+        "role": "assistant",
+        "message": "Yes, we have a 24/7 CCTV-monitored secure parking space inside the hotel premises at no extra charge."
+      }
+    ],
+    "expectedBehaviours": [
+      "Explain driver accommodation and meals",
+      "Explain secure parking",
+      "Answer follow-up questions using conversation context"
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Price Negotiation & Discount Handling",
+    "category": "discount",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "LKR 25,000 per night is too expensive for the Deluxe Suite. Can you offer it for LKR 18,000?"
+      },
+      {
+        "role": "assistant",
+        "message": "I completely understand your concern! 😊 Our standard rate for the Deluxe Suite is LKR 25,000. However, if you stay for 3 nights or more, I can apply an automatic 15% long-stay discount, bringing the rate down to LKR 21,250 net per night."
+      },
+      {
+        "role": "guest",
+        "message": "I am staying for only 1 night. Can you ask the manager if LKR 20,000 is possible?"
+      },
+      {
+        "role": "assistant",
+        "message": "Let me check with our Reservations Manager to see if we can get an exception for your stay! ⏳ I am routing this request to our manager right now. Please hold on for just a moment."
+      }
+    ],
+    "expectedBehaviours": [
+      "Acknowledge the guest's concern",
+      "Explain standard discount eligibility",
+      "Calculate discounts only from approved policy",
+      "Escalate non-standard discount requests",
+      "Do not promise manager approval",
+      "Do not claim the manager has already responded"
+    ]
+  },
+  {
+    "id": 10,
+    "title": "In-House Guest Service Support",
+    "category": "in_house_support",
+    "turns": [
+      {
+        "role": "guest",
+        "message": "Hi, I am currently staying in Room 204. What time does the swimming pool close today?"
+      },
+      {
+        "role": "assistant",
+        "message": "Hello! Hope you are having a wonderful stay with us! 🏊♂️ Our main outdoor pool is open until 8:00 PM tonight."
+      },
+      {
+        "role": "guest",
+        "message": "Great, and can we get 2 fresh pool towels sent up?"
+      },
+      {
+        "role": "assistant",
+        "message": "Absolutely! I have notified Housekeeping. They will deliver 2 fresh pool towels to Room 204 within 10 minutes. Enjoy your evening! 🍹"
+      }
+    ],
+    "expectedBehaviours": [
+      "Recognize an in-house guest context",
+      "Answer the pool-hours question",
+      "Create a Service Request Preview",
+      "Preserve the room number in the current conversation",
+      "Do not claim housekeeping was actually notified without a task-management integration",
+      "Do not guarantee a delivery time"
+    ]
+  }
+]

@@ -7,6 +7,7 @@ export interface RoomConfig {
   image: string;
   description: string;
   maxGuests: string;
+  aliases: string[];
 }
 
 export interface DemoEvent {
@@ -27,9 +28,15 @@ export interface PropertyConfig {
   checkInTime: string;
   checkOutTime: string;
   receptionHours: string;
+  earlyCheckInPolicy: string;
+  lateCheckOutPolicy: string;
   lateCheckInPolicy: string;
   roomServiceHours: string;
-  breakfastHours: string;
+  diningHours: {
+    breakfast: string;
+    lunch: string;
+    dinner: string;
+  };
   dietarySupport: string[];
   demoWeather: {
     condition: string;
@@ -41,9 +48,32 @@ export interface PropertyConfig {
   dayoutPackage: {
     price: string;
     priceAmount: number;
+    minGuests: number;
     hours: string;
     includes: string[];
+    childrenRates: {
+      under5: string;
+      ages5to10: string;
+    };
   };
+  corkageFee: {
+    food: string;
+    liquor: string;
+  };
+  airportTransfer: {
+    distance: string;
+    travelTime: string;
+    carPrice: string;
+    vanPrice: string;
+    tollsIncluded: boolean;
+  };
+  discountPolicy: string;
+  celebrationExtras: {
+    flowerDecoration: string;
+    chocolateCake: string;
+    candlelightDinner: string;
+  };
+  driverFacilities: string[];
   allowedTools: string[];
   allowedChips: string[];
 }
@@ -52,17 +82,23 @@ export const PROPERTY_CONFIG: PropertyConfig = {
   id: "aura-boutique-hotel",
   name: "Aura Boutique Hotel & Villa",
   tagline: "Boutique Hospitality & Oceanfront Luxury",
-  location: "Around 15 minutes from 5 Junction",
+  location: "Beach Road, Bentota",
   timezone: "Asia/Colombo",
-  googleMapsUrl: "https://maps.google.com/?q=Aura+Boutique+Hotel+Villa",
+  googleMapsUrl: "https://maps.google.com/?q=Aura+Boutique+Hotel+Bentota",
   demoPaymentUrl: "https://wesvion.ai/demo-payment",
-  checkInTime: "3:00 PM",
+  checkInTime: "2:00 PM",
   checkOutTime: "11:00 AM",
   receptionHours: "24/7 Front Desk Reception",
-  lateCheckInPolicy: "24/7 Late Check-in available upon request. Prior notification appreciated.",
-  roomServiceHours: "24/7 Late-Night Dining Menu available",
-  breakfastHours: "7:00 AM to 10:30 AM (Ocean Terrace Restaurant)",
-  dietarySupport: ["Gluten-free", "Vegan", "Halal", "Jain", "Allergen-conscious"],
+  earlyCheckInPolicy: "Early check-in (from 10:00 AM) is subject to room availability upon arrival.",
+  lateCheckOutPolicy: "Late check-out (until 2:00 PM) is subject to room availability upon arrival.",
+  lateCheckInPolicy: "24/7 Late check-in available. Kindly inform us of your estimated arrival time in advance.",
+  roomServiceHours: "6:30 AM to 11:00 PM daily",
+  diningHours: {
+    breakfast: "7:30 AM – 10:00 AM",
+    lunch: "12:30 PM – 2:30 PM",
+    dinner: "7:30 PM – 10:00 PM",
+  },
+  dietarySupport: ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Allergen-conscious"],
   demoWeather: {
     condition: "Light afternoon rain",
     temperature: "27°C",
@@ -90,14 +126,14 @@ export const PROPERTY_CONFIG: PropertyConfig = {
   ],
   rooms: [
     {
-      id: "ocean-suite",
-      title: "Premium Ocean View Suite",
-      price: "LKR 48,000 / night",
-      priceAmount: 48000,
-      badge: "Most Popular",
-      image: "/images/ocean-view-suite.jpg",
-      description: "King bed, private balcony with panoramic ocean views, gourmet breakfast included.",
-      maxGuests: "2 Adults + 1 Child",
+      id: "standard-deluxe",
+      title: "Standard Deluxe Double Room",
+      price: "LKR 15,000 / night",
+      priceAmount: 15000,
+      image: "/images/garden-room.jpg",
+      description: "Comfortable air-conditioned double room with modern amenities.",
+      maxGuests: "2 Adults",
+      aliases: ["standard deluxe", "deluxe double", "deluxe room"],
     },
     {
       id: "garden-room",
@@ -107,6 +143,18 @@ export const PROPERTY_CONFIG: PropertyConfig = {
       image: "/images/garden-room.jpg",
       description: "Queen bed surrounded by lush tropical gardens, outdoor rain shower, breakfast included.",
       maxGuests: "2 Adults",
+      aliases: ["deluxe garden", "garden room"],
+    },
+    {
+      id: "ocean-suite",
+      title: "Premium Ocean View Suite",
+      price: "LKR 48,000 / night",
+      priceAmount: 48000,
+      badge: "Most Popular",
+      image: "/images/ocean-view-suite.jpg",
+      description: "King bed, private balcony with panoramic ocean views, gourmet breakfast included.",
+      maxGuests: "2 Adults + 1 Child",
+      aliases: ["ocean view suite", "premium ocean view suite", "deluxe ocean view", "ocean view room"],
     },
     {
       id: "private-villa",
@@ -117,14 +165,48 @@ export const PROPERTY_CONFIG: PropertyConfig = {
       image: "/images/private-villa.jpg",
       description: "Spacious private villa with dedicated plunge pool, butler service & full kitchen.",
       maxGuests: "Up to 6 Guests",
+      aliases: ["private villa", "pool villa", "villa"],
     },
   ],
   dayoutPackage: {
-    price: "LKR 3,500 per guest",
+    price: "LKR 3,500 net per person",
     priceAmount: 3500,
+    minGuests: 5,
     hours: "9:00 AM – 5:00 PM",
-    includes: ["Welcome Drink", "Lunch Buffet", "Pool Access", "Changing Room Facilities"],
+    includes: [
+      "Welcome Drink",
+      "Buffet Lunch",
+      "Evening Tea & Snacks",
+      "Swimming Pool Access",
+      "Changing Room Facilities",
+    ],
+    childrenRates: {
+      under5: "Free of charge",
+      ages5to10: "50% charge (LKR 1,750 per child)",
+    },
   },
+  corkageFee: {
+    food: "Outside food is not permitted.",
+    liquor: "Outside liquor is permitted with a corkage fee of LKR 2,000 per bottle.",
+  },
+  airportTransfer: {
+    distance: "90 km from Katunayake International Airport (CMB)",
+    travelTime: "1.5 – 2 hours via Southern Expressway",
+    carPrice: "LKR 16,000 net per way (up to 3 guests)",
+    vanPrice: "LKR 22,000 net per way (up to 7 guests)",
+    tollsIncluded: true,
+  },
+  discountPolicy: "10% to 15% discount for stays longer than 3 nights or bookings of more than 3 rooms.",
+  celebrationExtras: {
+    flowerDecoration: "LKR 4,000 (Bed & Room Flower Setup)",
+    chocolateCake: "LKR 3,500 (1kg Chocolate Cake)",
+    candlelightDinner: "LKR 12,000 per couple (Romantic 4-course beachside setup)",
+  },
+  driverFacilities: [
+    "Complimentary driver quarters",
+    "Complimentary driver meals",
+    "24/7 CCTV-monitored secure parking",
+  ],
   allowedTools: [
     "pms_availability",
     "dynamic_rate",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { saveLeadToSupabase, LeadInsertPayload } from "@/lib/supabase";
 import { PROPERTY_CONFIG } from "@/lib/propertyConfig";
+import { buildHotelKnowledgeContext } from "@/lib/hotelKnowledge";
 
 interface ChatMessageInput {
   sender: "guest" | "ai" | "system";
@@ -190,6 +191,8 @@ function reconstructBookingState(
     knownDetails.roomPreference = "Deluxe Garden Room";
   } else if (lowerTranscript.includes("private villa") || lowerTranscript.includes("villa")) {
     knownDetails.roomPreference = "Private Villa with Pool";
+  } else if (lowerTranscript.includes("standard deluxe") || lowerTranscript.includes("deluxe double")) {
+    knownDetails.roomPreference = "Standard Deluxe Double Room";
   }
 
   // Name Parsing
@@ -197,7 +200,6 @@ function reconstructBookingState(
   if (nameMatch) {
     knownDetails.guestName = nameMatch[1];
   } else {
-    // Check direct single word reply after asking for name
     for (let i = 1; i < history.length; i++) {
       if (history[i - 1].text.toLowerCase().includes("name") && history[i].sender === "guest") {
         const candidate = history[i].text.trim();
@@ -224,7 +226,6 @@ function reconstructBookingState(
     knownDetails.specialRequests.push("Late check-in");
   }
 
-  // Calculate missing fields and stage
   const ALL_STAGES: Array<{ stage: BookingStage; isPresent: boolean }> = [
     { stage: "check_in", isPresent: Boolean(knownDetails.checkIn) },
     { stage: "check_out", isPresent: Boolean(knownDetails.checkOut) },
@@ -321,10 +322,10 @@ function generateDeterministicBookingResponse(
 
     case "room_preference":
       reply = lang === "si"
-        ? "ඔබ වඩාත් ප්‍රියකරන කාමර වර්ගය කුමක්ද?\n\n• Premium Ocean View Suite (LKR 48,000/night)\n• Deluxe Garden Room (LKR 32,000/night)\n• Private Villa with Pool (LKR 85,000/night)"
+        ? "ඔබ වඩාත් ප්‍රියකරන කාමර වර්ගය කුමක්ද?\n\n• Standard Deluxe Double Room (LKR 15,000/night)\n• Deluxe Garden Room (LKR 32,000/night)\n• Premium Ocean View Suite (LKR 48,000/night)\n• Private Villa with Pool (LKR 85,000/night)"
         : lang === "singlish"
-        ? "Kamathi room type eka mokakda?\n\n• Premium Ocean View Suite (LKR 48,000/night)\n• Deluxe Garden Room (LKR 32,000/night)\n• Private Villa with Pool (LKR 85,000/night)"
-        : "Which room category would you prefer for your stay?\n\n• Premium Ocean View Suite (LKR 48,000/night)\n• Deluxe Garden Room (LKR 32,000/night)\n• Private Villa with Pool (LKR 85,000/night)";
+        ? "Kamathi room type eka mokakda?\n\n• Standard Deluxe Double Room (LKR 15,000/night)\n• Deluxe Garden Room (LKR 32,000/night)\n• Premium Ocean View Suite (LKR 48,000/night)\n• Private Villa with Pool (LKR 85,000/night)"
+        : "Which room category would you prefer for your stay?\n\n• Standard Deluxe Double Room (LKR 15,000/night)\n• Deluxe Garden Room (LKR 32,000/night)\n• Premium Ocean View Suite (LKR 48,000/night)\n• Private Villa with Pool (LKR 85,000/night)";
       break;
 
     case "guest_name":
@@ -466,7 +467,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate and limit history server-side (max 10 recent turns)
     const validHistory: ChatMessageInput[] = Array.isArray(body.history)
       ? body.history
           .filter(
@@ -478,13 +478,11 @@ export async function POST(req: NextRequest) {
           .slice(-10)
       : [];
 
-    // Reconstruct Booking State Deterministically First
     const bookingState = reconstructBookingState(userMessage, validHistory);
 
     let agentResponse: StructuredAgentResponse;
     let responseSource = "deterministic";
 
-    // If active flow is booking, use deterministic state-first response generator
     if (bookingState.activeFlow === "booking") {
       agentResponse = generateDeterministicBookingResponse(userMessage, bookingState);
       responseSource = "deterministic-booking-flow";
@@ -508,13 +506,46 @@ export async function POST(req: NextRequest) {
 
         contents.push({ role: "user", parts: [{ text: userMessage }] });
 
+        // Retrieve dynamic knowledge context for the query
+        const knowledgeContext = buildHotelKnowledgeContext(userMessage);
+
+        const systemPrompt = `
+You are Anya, Digital Guest Receptionist & Booking Assistant at ${PROPERTY_CONFIG.name}.
+
+${knowledgeContext}
+
+DYNAMIC KNOWLEDGE & BEHAVIOUR DIRECTIVES:
+- Answer guest questions accurately using the provided property configuration and FAQ records.
+- Apply demo safety transformations:
+  • Bank slips: State "Payment Slip Received — Pending Staff Verification" (No fake booking IDs or fake confirmations).
+  • Complaints: State "Staff Handoff Triggered" or "Manager Follow-up Requested" (No unverified 5-minute promises).
+  • Severe allergies: Log high-priority note + recommend direct chef confirmation upon check-in.
+  • In-house service: State "Service Request Preview".
+
+REQUIRED OUTPUT JSON SCHEMA:
+{
+  "reply": "Conversational text response",
+  "badge": "Short 2-4 word label",
+  "leadCaptured": boolean,
+  "staffAlerted": boolean,
+  "intent": "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "complaint" | "emergency" | "itinerary" | "transport" | "handoff",
+  "intents": ["array of intent strings"],
+  "language": "en" | "si" | "singlish",
+  "sentiment": "positive" | "neutral" | "confused" | "frustrated" | "angry" | "urgent",
+  "priority": "low" | "normal" | "high" | "urgent",
+  "chips": ["array of allowed chip strings"],
+  "media": [],
+  "toolRequests": []
+}
+`;
+
         try {
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
             model: modelName,
             contents,
             config: {
-              systemInstruction: `You are Anya, Digital Guest Receptionist at ${PROPERTY_CONFIG.name}. Return structured JSON.`,
+              systemInstruction: systemPrompt,
               responseMimeType: "application/json",
               temperature: 0.2,
             },
@@ -559,7 +590,7 @@ export async function POST(req: NextRequest) {
           check_out: leadInfo?.checkOut || null,
           guest_count: leadInfo?.guestCount || null,
           message: leadInfo?.message || userMessage,
-          source: "AI Guest Agent (Anya Booking Flow)",
+          source: "AI Guest Agent (Anya Knowledge Layer)",
           status: "new",
         };
 
