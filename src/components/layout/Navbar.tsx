@@ -3,16 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, Menu, X, ArrowRight, Sparkles } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { name: "Home", href: "/" },
-  { name: "AI Agents", href: "/agents" },
-  { name: "Automation", href: "/automation" },
-  { name: "Industries", href: "/industries" },
+  { name: "Product", href: "/agents" },
+  { name: "Solutions", href: "/industries" },
   { name: "How It Works", href: "/how-it-works" },
-  { name: "Demo", href: "/demo" },
+  { name: "Live Demo", href: "/demo" },
   { name: "About", href: "/about" },
 ];
 
@@ -23,7 +21,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 15);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -32,31 +30,23 @@ export default function Navbar() {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-[#070913]/90 backdrop-blur-md border-white/10 py-3 shadow-lg shadow-black/40"
-          : "bg-transparent border-transparent py-5"
+          ? "bg-[#faf9f6]/90 backdrop-blur-md border-b border-slate-200/80 py-3 shadow-xs"
+          : "bg-[#faf9f6]/60 backdrop-blur-xs border-b border-transparent py-5"
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center group-hover:border-cyan-400/60 transition-colors">
-              <Bot className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
-                Wesvion <span className="text-cyan-400">AI</span>
-              </span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">
-                Automation Agency
-              </span>
-            </div>
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <span className="text-xl sm:text-2xl font-serif font-normal tracking-tight text-slate-900">
+              Wesvion <span className="text-sky-700 italic font-sans font-medium text-lg">AI</span>
+            </span>
           </Link>
 
-          {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2 glass-pill px-4 py-1.5 rounded-full border border-white/10">
+          {/* Desktop Navigation Items */}
+          <nav className="hidden md:flex items-center gap-1 bg-white/80 px-4 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -64,10 +54,10 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200",
+                    "px-3.5 py-1.5 text-xs font-medium rounded-full transition-all duration-150",
                     isActive
-                      ? "text-white bg-white/10 shadow-sm"
-                      : "text-slate-300 hover:text-white hover:bg-white/5"
+                      ? "text-slate-950 bg-slate-100 font-semibold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                   )}
                 >
                   {item.name}
@@ -76,33 +66,32 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* CTA Button */}
+          {/* Action CTA Button */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              href="/demo"
-              className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-cyan-200 transition-all shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/30"
+              href="/contact"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-xs"
             >
-              <Sparkles className="w-4 h-4 text-slate-950" />
-              <span>Book a Free Demo</span>
-              <ArrowRight className="w-4 h-4 text-slate-950 group-hover:translate-x-0.5 transition-transform" />
+              <span>Book a Demo</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Navigation Toggle */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-slate-300 hover:text-white bg-white/5 border border-white/10"
+            className="md:hidden p-2 rounded-lg text-slate-700 hover:text-slate-950 bg-white border border-slate-200"
             aria-label="Toggle Navigation Menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden glass-panel border-b border-white/10 px-4 pt-4 pb-6 space-y-3 mt-2 mx-4 rounded-2xl animate-in slide-in-from-top-4 duration-200">
+        <div className="md:hidden bg-white border-b border-slate-200 px-4 pt-4 pb-6 space-y-3 mt-2 mx-4 rounded-2xl shadow-lg">
           <div className="flex flex-col space-y-1">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
@@ -112,10 +101,10 @@ export default function Navbar() {
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "px-4 py-2.5 text-base font-medium rounded-xl transition-colors",
+                    "px-4 py-2.5 text-sm font-medium rounded-xl transition-colors",
                     isActive
-                      ? "text-cyan-400 bg-white/10"
-                      : "text-slate-300 hover:text-white hover:bg-white/5"
+                      ? "text-sky-700 bg-sky-50 font-semibold"
+                      : "text-slate-700 hover:text-slate-950 hover:bg-slate-50"
                   )}
                 >
                   {item.name}
@@ -123,13 +112,13 @@ export default function Navbar() {
               );
             })}
           </div>
-          <div className="pt-2">
+          <div className="pt-2 border-t border-slate-100">
             <Link
-              href="/demo"
+              href="/contact"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300"
+              className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-slate-900"
             >
-              <span>Book a Free Demo</span>
+              <span>Book a Demo</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

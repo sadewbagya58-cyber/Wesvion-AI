@@ -1,243 +1,119 @@
 "use client";
 
 import { useState } from "react";
-import { Send, CheckCircle2, AlertCircle, Building2, Globe2, User, Mail, Sparkles } from "lucide-react";
+import { Send, CheckCircle2 } from "lucide-react";
 
 export default function ContactForm() {
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    businessName: "",
-    website: "",
     email: "",
-    country: "Australia",
-    automationGoal: "AI Guest Agent & FAQ Automation",
-    notes: "",
+    property: "",
+    propertyType: "Boutique Hotel",
+    message: "",
   });
-
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    if (!formData.name.trim() || !formData.email.trim() || !formData.businessName.trim()) {
-      setError("Please complete all required fields (Name, Business Name, and Email).");
-      return;
-    }
-
-    if (!formData.email.includes("@") || !formData.email.includes(".")) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 900);
+    if (!formData.email || !formData.name) return;
+    setSubmitted(true);
   };
 
-  return (
-    <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-cyan-500/20 shadow-2xl relative overflow-hidden">
-      {/* Background glow overlay */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {submitted ? (
-        <div className="text-center py-10 space-y-6 animate-in fade-in duration-300">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-white">Demo Request Received</h3>
-            <p className="text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-              Thank you, <span className="text-cyan-400 font-semibold">{formData.name}</span>. We have logged your request for <strong className="text-white">{formData.businessName}</strong> ({formData.country}).
-            </p>
-          </div>
-
-          <div className="bg-[#0b1022] p-4 rounded-xl border border-white/10 text-xs text-slate-400 max-w-md mx-auto text-left space-y-2">
-            <div className="flex items-center gap-2 text-cyan-300 font-mono font-semibold">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>Next Steps:</span>
-            </div>
-            <p>1. Our automation strategy team will review your business requirements.</p>
-            <p>2. We will prepare a tailored demonstration of the AI Guest Agent workflow for {formData.businessName}.</p>
-            <p>3. A calendar invitation will be dispatched to <strong className="text-slate-200">{formData.email}</strong>.</p>
-          </div>
-
-          <button
-            onClick={() => {
-              setSubmitted(false);
-              setFormData({
-                name: "",
-                businessName: "",
-                website: "",
-                email: "",
-                country: "Australia",
-                automationGoal: "AI Guest Agent & FAQ Automation",
-                notes: "",
-              });
-            }}
-            className="text-xs text-cyan-400 hover:underline font-mono"
-          >
-            Submit Another Enquiry
-          </button>
+  if (submitted) {
+    return (
+      <div className="card-light rounded-3xl p-8 sm:p-12 text-center space-y-4 border border-slate-200/80 bg-white">
+        <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-6 h-6" />
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
-          <div className="space-y-1">
-            <h3 className="text-2xl font-bold text-white">Book a Consultation & Demo</h3>
-            <p className="text-sm text-slate-400">
-              Discover how custom AI agents and workflow automation can transform your hospitality operations.
-            </p>
-          </div>
+        <h3 className="text-2xl font-serif text-slate-900">Demo Request Received</h3>
+        <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+          Thank you, {formData.name}. Our hospitality team has received your enquiry for {formData.property || "your property"} and will reach out shortly to schedule your private demonstration.
+        </p>
+      </div>
+    );
+  }
 
-          {error && (
-            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
+  return (
+    <form onSubmit={handleSubmit} className="card-light rounded-3xl p-8 sm:p-12 space-y-6 border border-slate-200/80 bg-white">
+      <div className="space-y-2">
+        <h3 className="text-2xl font-serif text-slate-900">Book a Private Demo</h3>
+        <p className="text-xs text-slate-600">
+          Learn how the Wesvion AI Guest Agent can be tailored for your property.
+        </p>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-cyan-400" /> Your Full Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Sarah Jenkins"
-                className="w-full bg-[#0a0e1c] border border-white/10 focus:border-cyan-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors"
-              />
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-700">Your Name *</label>
+          <input
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Sarah Jenkins"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-slate-400"
+          />
+        </div>
 
-            {/* Email */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-cyan-400" /> Business Email *
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="sarah@aurahotel.com"
-                className="w-full bg-[#0a0e1c] border border-white/10 focus:border-cyan-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors"
-              />
-            </div>
-          </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-700">Business Email *</label>
+          <input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="sarah@boutiquehotel.com"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-slate-400"
+          />
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Business Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-cyan-400" /> Business Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.businessName}
-                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                placeholder="e.g. Grand Horizon Boutique Hotel"
-                className="w-full bg-[#0a0e1c] border border-white/10 focus:border-cyan-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors"
-              />
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-700">Property Name</label>
+          <input
+            type="text"
+            value={formData.property}
+            onChange={(e) => setFormData({ ...formData, property: e.target.value })}
+            placeholder="Aura Villa & Resort"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-slate-400"
+          />
+        </div>
 
-            {/* Business Website */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Globe2 className="w-3.5 h-3.5 text-cyan-400" /> Business Website
-              </label>
-              <input
-                type="text"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                placeholder="www.grandhorizon.com.au"
-                className="w-full bg-[#0a0e1c] border border-white/10 focus:border-cyan-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Country */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
-                Country
-              </label>
-              <select
-                value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full bg-[#0a0e1c] border border-white/10 focus:border-cyan-500/60 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-colors"
-              >
-                <option value="Australia">Australia</option>
-                <option value="United Kingdom">United Kingdom</option>
-                <option value="New Zealand">New Zealand</option>
-                <option value="Other International">Other International</option>
-              </select>
-            </div>
-
-            {/* Automation Goal */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
-                Primary Automation Focus
-              </label>
-              <select
-                value={formData.automationGoal}
-                onChange={(e) => setFormData({ ...formData, automationGoal: e.target.value })}
-                className="w-full bg-[#0a0e1c] border border-white/10 focus:border-cyan-500/60 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-colors"
-              >
-                <option value="AI Guest Agent & FAQ Automation">AI Guest Agent & FAQ Automation</option>
-                <option value="Booking Enquiry & Lead Qualification">Booking Enquiry & Lead Qualification</option>
-                <option value="Customer Support & Handoff Automation">Customer Support & Handoff Automation</option>
-                <option value="Custom Workflow & CRM Integration">Custom Workflow & CRM Integration</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
-              What would you like to automate? (Optional)
-            </label>
-            <textarea
-              rows={3}
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Tell us briefly about your guest enquiry volume, current tools, or specific operational bottlenecks..."
-              className="w-full bg-[#0a0e1c] border border-white/10 focus:border-cyan-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors"
-            />
-          </div>
-
-          {/* CTA Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 px-6 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-cyan-400 via-cyan-300 to-cyan-400 hover:from-cyan-300 hover:to-cyan-200 transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 text-base"
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-700">Property Type</label>
+          <select
+            value={formData.propertyType}
+            onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-slate-400"
           >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                Processing Request...
-              </span>
-            ) : (
-              <>
-                <span>Book My Free Demo</span>
-                <Send className="w-5 h-5" />
-              </>
-            )}
-          </button>
+            <option value="Boutique Hotel">Boutique Hotel</option>
+            <option value="Independent Hotel">Independent Hotel</option>
+            <option value="Luxury Resort">Luxury Resort</option>
+            <option value="Private Villa">Private Villa</option>
+            <option value="Bed & Breakfast">Bed & Breakfast / Guest House</option>
+          </select>
+        </div>
+      </div>
 
-          <p className="text-[11px] text-center text-slate-400 font-mono">
-            No long-term contracts. Designed for hospitality businesses in Australia and the United Kingdom.
-          </p>
-        </form>
-      )}
-    </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-slate-700">How can we help your property?</label>
+        <textarea
+          rows={4}
+          value={formData.message}
+          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+          placeholder="Tell us about your room capacity, current guest inquiry channels, or key automation goals..."
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-slate-400"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="w-full sm:w-auto px-8 py-3.5 rounded-full text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-2xs"
+      >
+        <span>Request Private Demo</span>
+        <Send className="w-4 h-4" />
+      </button>
+    </form>
   );
 }

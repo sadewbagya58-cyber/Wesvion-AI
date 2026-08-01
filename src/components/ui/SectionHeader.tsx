@@ -1,39 +1,29 @@
-import { cn } from "@/lib/utils";
-
 interface SectionHeaderProps {
-  eyebrow?: string;
+  badge?: string;
   title: string;
-  description?: string;
+  subtitle?: string;
   centered?: boolean;
-  className?: string;
 }
 
 export default function SectionHeader({
-  eyebrow,
+  badge,
   title,
-  description,
+  subtitle,
   centered = true,
-  className,
 }: SectionHeaderProps) {
   return (
-    <div
-      className={cn(
-        "max-w-3xl space-y-3",
-        centered ? "mx-auto text-center" : "text-left",
-        className
+    <div className={`space-y-3 ${centered ? "text-center max-w-3xl mx-auto" : "max-w-2xl"}`}>
+      {badge && (
+        <span className="inline-block text-xs font-semibold uppercase tracking-wider text-sky-700 bg-sky-50 px-3.5 py-1 rounded-full border border-sky-200/80">
+          {badge}
+        </span>
       )}
-    >
-      {eyebrow && (
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono tracking-widest uppercase font-medium">
-          <span>{eyebrow}</span>
-        </div>
-      )}
-      <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+      <h2 className="text-3xl sm:text-5xl font-serif font-normal text-slate-900 leading-tight">
         {title}
       </h2>
-      {description && (
-        <p className="text-base sm:text-lg text-slate-400 leading-relaxed font-normal">
-          {description}
+      {subtitle && (
+        <p className="text-base text-slate-600 leading-relaxed font-normal">
+          {subtitle}
         </p>
       )}
     </div>
