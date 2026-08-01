@@ -110,6 +110,7 @@ function createMessageId(prefix: string): string {
 }
 
 export default function DemoChat({ compact = false }: { compact?: boolean }) {
+  const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID());
   const [activeChannel, setActiveChannel] = useState<DemoChannel>("website");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -144,6 +145,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: userText,
+            sessionId,
             history: updatedMessages.map((m) => ({ sender: m.sender, text: m.text })),
           }),
         }),
@@ -157,14 +159,14 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
       const data = await res.json();
       const replyText = data.reply || (scenarioOverride?.response as string) || "We'd be delighted to assist with your stay at Aura Boutique Hotel & Villa.";
       const badgeLabel = data.badge || (scenarioOverride?.badge as string) || "Anya Receptionist";
-      const isLead = Boolean(data.leadCaptured || scenarioOverride?.leadCaptured);
+      const isLead = Boolean(data.leadCaptured);
       const isSaved = Boolean(data.leadSaved);
-      const isStaff = Boolean(data.staffAlerted || scenarioOverride?.staffAlerted);
+      const isStaff = Boolean(data.staffHandoffRequested || data.staffAlerted || scenarioOverride?.staffAlerted);
       const mediaItems = (data.media || scenarioOverride?.media || []) as MediaItem[];
       const actionChips = (data.chips || ["Check Demo Availability", "View Photos", "Start Booking"]) as string[];
       const tools = (data.toolRequests || scenarioOverride?.toolRequests || []) as ToolRequest[];
 
-      if (isLead || isSaved) setLeadCount((prev) => prev + 1);
+      if (isSaved) setLeadCount((prev) => prev + 1);
       if (isStaff) setStaffAlertActive(true);
 
       const aiMsg: ChatMessage = {
@@ -198,7 +200,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         text: fallbackReply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         badge: fallbackBadge,
-        leadCaptured: Boolean(scenarioOverride?.leadCaptured),
+        leadCaptured: false,
         leadSaved: false,
         staffAlerted: Boolean(scenarioOverride?.staffAlerted),
         chips: ["Check Demo Availability", "View Photos", "Start Booking"],
@@ -213,10 +215,22 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    const newSession = crypto.randomUUID();
+    setSessionId(newSession);
     setMessages([]);
     setStaffAlertActive(false);
     setLeadCount(0);
+
+    try {
+      await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "reset", sessionId: newSession, reset: true }),
+      });
+    } catch {
+      // Handle reset error
+    }
   };
 
   const latestChips = messages.length > 0 && messages[messages.length - 1].sender === "ai"
