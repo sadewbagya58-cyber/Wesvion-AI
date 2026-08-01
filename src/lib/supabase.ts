@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { resolvePropertyIdBySlug } from "@/lib/propertyResolver";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const supabase =
   supabaseUrl && supabaseAnonKey
@@ -9,6 +11,7 @@ export const supabase =
     : null;
 
 export interface LeadInsertPayload {
+  property_id?: string;
   property_name?: string;
   guest_name?: string | null;
   guest_email?: string | null;
@@ -27,22 +30,26 @@ export interface SaveLeadResult {
 }
 
 /**
- * Inserts a captured lead into Supabase.
- * Executes a pure INSERT statement (without RETURNING/SELECT) to comply with RLS insert-only policies.
+ * Inserts a captured lead into Supabase via trusted server client with server-resolved property_id.
+ * Dynamically resolves property_id by slug if not explicitly passed.
  */
 export async function saveLeadToSupabase(payload: LeadInsertPayload): Promise<SaveLeadResult> {
-  if (!supabase) {
-    return {
-      success: false,
-      error: "Supabase client not initialized (missing environment variables)",
-    };
-  }
-
   try {
-    const { error, status } = await supabase
+    const client = typeof window === "undefined" ? getSupabaseAdminClient() : supabase;
+    if (!client) {
+      return {
+        success: false,
+        error: "Supabase client not initialized",
+      };
+    }
+
+    const resolvedPropertyId = payload.property_id || (await resolvePropertyIdBySlug("aura-boutique-hotel"));
+
+    const { error, status } = await client
       .from("leads")
       .insert([
         {
+          property_id: resolvedPropertyId,
           property_name: payload.property_name || "Aura Boutique Hotel & Villa",
           guest_name: payload.guest_name || null,
           guest_email: payload.guest_email || null,
