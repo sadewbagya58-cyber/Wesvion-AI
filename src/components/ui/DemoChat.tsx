@@ -68,11 +68,11 @@ const PRESET_SCENARIOS = [
     staffAlerted: false,
   },
   {
-    label: "4. Human Staff Escalation",
+    label: "4. Human Staff Handoff",
     guestQuery: "We are planning a private anniversary event for 30 guests next month. Can a manager contact me?",
     response:
       "Happy anniversary! Because private group events require custom venue arrangements, I have flagged this request for high-priority staff handoff. Our Guest Experience Director has received an immediate email notification with your details.",
-    badge: "Staff Escalation Alert",
+    badge: "Staff Handoff Triggered",
     leadCaptured: true,
     staffAlerted: true,
   },
@@ -280,7 +280,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
           {staffAlertActive && (
             <span className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 px-3 py-1 rounded-full text-xs font-medium">
               <BellRing className="w-3.5 h-3.5" />
-              Staff Escalated
+              Staff Handoff Triggered
             </span>
           )}
           <button
@@ -386,7 +386,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
                   {msg.staffAlerted && (
                     <span className="text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
                       <BellRing className="w-3 h-3 text-amber-600" />
-                      Staff Escalation Alert
+                      Staff Handoff Triggered
                     </span>
                   )}
                 </div>

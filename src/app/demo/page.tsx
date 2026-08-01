@@ -139,7 +139,7 @@ export default function DemoPage() {
             <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-200/60">
               <div className="flex items-center gap-2 text-slate-900 font-semibold text-sm">
                 <UserCheck className="w-4 h-4 text-amber-600" />
-                <span>Human Staff Escalation</span>
+                <span>Human Staff Handoff</span>
               </div>
               <p>
                 Flags complex requests, group bookings, or anniversary events for high-priority staff handoff.

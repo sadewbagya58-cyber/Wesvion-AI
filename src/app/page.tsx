@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Globe
 } from "lucide-react";
+import HeroShowcase from "@/components/ui/HeroShowcase";
 
 function InstagramIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -32,75 +33,52 @@ export const metadata = {
 export default function HomePage() {
   return (
     <div className="space-y-24 pb-20">
-      {/* SECTION 1: HERO */}
-      <section className="pt-12 pb-8 md:pt-20 md:pb-16 text-center relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-50 border border-sky-200/80 text-sky-800 text-xs font-medium tracking-wide">
-            <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-            <span>WESVION AI FOR HOSPITALITY</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-normal text-slate-900 tracking-tight leading-[1.15]">
-            Turn every guest enquiry <br />
-            <span className="italic font-sans font-medium text-sky-700">into an opportunity.</span>
-          </h1>
-
-          <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
-            Wesvion AI helps hospitality teams respond to guest enquiries, capture booking opportunities, and hand important conversations to staff—24/7.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Link
-              href="/demo"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm"
-            >
-              <span>Experience the Guest Agent</span>
-              <ArrowRight className="w-4 h-4 text-slate-300" />
-            </Link>
-
-            <Link
-              href="/contact"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all shadow-2xs"
-            >
-              <span>Book a Private Demo</span>
-            </Link>
-          </div>
-
-          {/* Hero Visual Mockup: Editorial Guest Conversation Preview */}
-          <div className="pt-10 max-w-3xl mx-auto">
-            <div className="card-light rounded-3xl p-6 sm:p-8 text-left space-y-4 border border-slate-200/90 shadow-sm bg-white">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 font-serif text-lg font-medium">
-                    A
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">Aura Boutique Hotel & Villa</h3>
-                    <p className="text-xs text-slate-500 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      AI Guest Agent Active • 24/7 Reception Assistant
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-mono bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">
-                  Website Chat Simulation
-                </span>
+      {/* SECTION 1: CINEMATIC SPLIT HERO */}
+      <section className="pt-8 pb-12 md:pt-16 md:pb-20 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            {/* LEFT COLUMN: HERO COPY & CTAs */}
+            <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-50 border border-sky-200/80 text-sky-800 text-xs font-medium tracking-wide">
+                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                <span>WESVION AI FOR HOSPITALITY</span>
               </div>
 
-              {/* Sample Messages */}
-              <div className="space-y-3 pt-1">
-                <div className="bg-slate-100 text-slate-800 p-3.5 rounded-2xl rounded-tr-none max-w-[85%] ml-auto text-sm leading-relaxed">
-                  Hi! Do you have any ocean view suites available for next weekend, and what time is breakfast served?
-                </div>
-                <div className="bg-sky-50 border border-sky-100 text-slate-900 p-4 rounded-2xl rounded-tl-none max-w-[90%] text-sm leading-relaxed space-y-2">
-                  <p>
-                    G&apos;day! Yes, we have our <strong>Premium Ocean View Suite ($420/night)</strong> available for next weekend. Gourmet breakfast is included daily and served at our Ocean Terrace Restaurant from 7:00 AM to 10:30 AM.
-                  </p>
-                  <p className="text-xs text-sky-800 font-medium pt-1">
-                    Would you like me to log your dates and contact details for a direct reservation enquiry?
-                  </p>
-                </div>
+              <h1 className="text-4xl sm:text-6xl lg:text-6xl font-serif font-normal text-slate-900 tracking-tight leading-[1.15]">
+                Turn every guest enquiry <br className="hidden sm:inline" />
+                <span className="italic font-sans font-medium text-sky-700">into an opportunity.</span>
+              </h1>
+
+              <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
+                Wesvion AI helps hospitality teams respond to guest enquiries, capture booking opportunities, and hand important conversations to staff—24/7.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
+                <Link
+                  href="/demo"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm"
+                >
+                  <span>Experience the Guest Agent</span>
+                  <ArrowRight className="w-4 h-4 text-slate-300" />
+                </Link>
+
+                <Link
+                  href="/contact"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all shadow-2xs"
+                >
+                  <span>Book a Private Demo</span>
+                </Link>
               </div>
+
+              <div className="pt-2 flex items-center justify-center lg:justify-start gap-3 text-xs text-slate-500">
+                <Building2 className="w-4 h-4 text-sky-700 shrink-0" />
+                <span>Engineered for Boutique Hotels, Resorts & Private Villas</span>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: HERO PRODUCT SHOWCASE MOCKUP */}
+            <div className="lg:col-span-6 pt-4 lg:pt-0">
+              <HeroShowcase />
             </div>
           </div>
         </div>
@@ -195,9 +173,9 @@ export default function HomePage() {
             <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center font-serif text-xl font-bold">
               03
             </div>
-            <h3 className="text-xl font-serif text-slate-900">Instant Staff Escalation</h3>
+            <h3 className="text-xl font-serif text-slate-900">Instant Staff Handoff</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Recognises complex requests, large group bookings, or anniversary events and dispatches an instant notification to your staff.
+              Recognises complex requests, large group bookings, or anniversary events and flags the conversation for staff handoff.
             </p>
           </div>
         </div>
@@ -249,11 +227,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 5: ELEGANT DEMO PREVIEW */}
+      {/* SECTION 5: ELEGANT DEMO PREVIEW HIGHLIGHT */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
-            INTERACTIVE PREVIEW
+            PRODUCT PREVIEW
           </span>
           <h2 className="text-3xl sm:text-4xl font-serif text-slate-900">
             Experience the AI Guest Agent in action.
@@ -291,7 +269,7 @@ export default function HomePage() {
 
             <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-100 text-sm text-slate-800 leading-relaxed">
               <p className="font-medium text-slate-900 mb-1">Live Capability Highlight:</p>
-              When a guest provides stay dates or contact details, the Guest Agent automatically registers the enquiry into your leads table and dispatches a staff notification alert.
+              When a guest provides stay dates or contact details, the Guest Agent automatically registers the enquiry into your leads table and triggers a staff handoff alert.
             </div>
           </div>
 
@@ -442,7 +420,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 9: FINAL CALL TO ACTION (LUXURY CONTRAST CARD) */}
+      {/* SECTION 9: FINAL CALL TO ACTION */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="card-dark-contrast rounded-3xl p-10 sm:p-16 text-center space-y-6 relative overflow-hidden">
           <div className="max-w-2xl mx-auto space-y-4 relative z-10">
