@@ -1,6 +1,8 @@
 import faqsData from "@/data/hotelFaqs.json";
 import conversationsData from "@/data/trainingConversations.json";
 import { PROPERTY_CONFIG } from "@/lib/propertyConfig";
+import { getSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { resolvePropertyIdBySlug } from "@/lib/propertyResolver";
 
 export interface FaqItem {
   id: number;
@@ -26,8 +28,57 @@ export interface TrainingConversation {
   expectedBehaviours: string[];
 }
 
+export interface DocumentChunkSnippet {
+  id: string;
+  content: string;
+  documentTitle: string;
+  documentCategory: string;
+}
+
 const ALL_FAQS: FaqItem[] = (faqsData as FaqCategory[]).flatMap((cat) => cat.faqs);
 const ALL_CONVERSATIONS: TrainingConversation[] = conversationsData as TrainingConversation[];
+
+export async function getPropertyDocumentChunks(message: string, limit: number = 3): Promise<DocumentChunkSnippet[]> {
+  try {
+    const client = getSupabaseAdminClient();
+    const propertyId = await resolvePropertyIdBySlug("aura-boutique-hotel");
+
+    const { data: chunks } = await client
+      .from("knowledge_chunks")
+      .select("id, content, document_category, document_id, knowledge_documents!inner(title, active, processing_status)")
+      .eq("property_id", propertyId)
+      .eq("knowledge_documents.active", true)
+      .eq("knowledge_documents.processing_status", "ready")
+      .limit(10);
+
+    if (!chunks || chunks.length === 0) return [];
+
+    const lower = message.toLowerCase();
+    const tokens = lower.split(/\s+/).filter((t) => t.length > 2);
+
+    const scored = chunks.map((item) => {
+      let score = 0;
+      const contentLower = item.content.toLowerCase();
+      for (const token of tokens) {
+        if (contentLower.includes(token)) score += 2;
+      }
+      return { item, score };
+    });
+
+    return scored
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((s) => ({
+        id: s.item.id,
+        content: s.item.content,
+        documentTitle: (s.item.knowledge_documents as unknown as { title: string }).title || "Property Document",
+        documentCategory: s.item.document_category || "general",
+      }));
+  } catch {
+    return [];
+  }
+}
 
 export function getRelevantFaqs(message: string, limit: number = 3): FaqItem[] {
   const lower = message.toLowerCase();
@@ -97,7 +148,8 @@ export function getRelevantTrainingExamples(message: string, limit: number = 2):
     .map((item) => item.conv);
 }
 
-export function buildHotelKnowledgeContext(message: string): string {
+export async function buildHotelKnowledgeContext(message: string): Promise<string> {
+  const docChunks = await getPropertyDocumentChunks(message, 3);
   const faqs = getRelevantFaqs(message, 3);
   const convs = getRelevantTrainingExamples(message, 2);
 
@@ -116,6 +168,14 @@ export function buildHotelKnowledgeContext(message: string): string {
   context += `- Discount Policy: ${PROPERTY_CONFIG.discountPolicy}\n`;
   context += `- Celebration Extras: Flower setup (${PROPERTY_CONFIG.celebrationExtras.flowerDecoration}), Chocolate Cake (${PROPERTY_CONFIG.celebrationExtras.chocolateCake}), Candlelight Dinner (${PROPERTY_CONFIG.celebrationExtras.candlelightDinner}).\n`;
   context += `- Driver Facilities: ${PROPERTY_CONFIG.driverFacilities.join(", ")}.\n\n`;
+
+  if (docChunks.length > 0) {
+    context += `UPLOADED HOTEL DOCUMENTS (PROPERTY-SCOPED KNOWLEDGE):\n`;
+    for (const chunk of docChunks) {
+      context += `• Document: ${chunk.documentTitle} [Category: ${chunk.documentCategory}]\n  Content: ${chunk.content}\n`;
+    }
+    context += `\n`;
+  }
 
   if (faqs.length > 0) {
     context += `RELEVANT HOTEL FAQ RECORDS:\n`;

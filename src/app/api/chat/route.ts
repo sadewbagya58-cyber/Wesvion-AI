@@ -507,7 +507,7 @@ export async function POST(req: NextRequest) {
         contents.push({ role: "user", parts: [{ text: userMessage }] });
 
         // Retrieve dynamic knowledge context for the query
-        const knowledgeContext = buildHotelKnowledgeContext(userMessage);
+        const knowledgeContext = await buildHotelKnowledgeContext(userMessage);
 
         const systemPrompt = `
 You are Anya, Digital Guest Receptionist & Booking Assistant at ${PROPERTY_CONFIG.name}.
