@@ -36,13 +36,28 @@ export interface BookingDraft {
   specialRequests?: string;
 }
 
+export interface LastEntity {
+  type: "menu_item" | "room" | "package" | "policy" | "service" | "location" | "general";
+  name: string;
+}
+
+export interface KnowledgeSourceInfo {
+  type: "uploaded_document" | "property_config" | "faq" | "none";
+  documentId?: string;
+  documentTitle?: string;
+}
+
 export interface SessionConversationState {
   sessionId: string;
   activeFlow: "none" | "booking";
   bookingStage: BookingStage | null;
   bookingDraft: BookingDraft;
   lastTopic?: string;
-  lastKnowledgeSource?: string;
+  lastEntity?: LastEntity;
+  lastKnowledgeDocumentId?: string;
+  lastKnowledgeChunkIds?: string[];
+  lastKnowledgeCategory?: string;
+  lastKnowledgeSummary?: string;
   lastLeadSaved?: boolean;
 }
 
@@ -51,6 +66,7 @@ export interface IntentClassificationResult {
   secondaryIntents: string[];
   extractedValue?: string | number | null;
   confidence: number;
+  isFollowUp?: boolean;
 }
 
 export interface ValidatedLead {
@@ -74,6 +90,8 @@ export interface MediaItem {
 export interface ChatApiResponse {
   reply: string;
   intent: PrimaryIntent;
+  resolvedEntity?: LastEntity | null;
+  knowledgeSource?: KnowledgeSourceInfo;
   activeFlow: "none" | "booking";
   bookingStage: BookingStage | null;
   bookingDraftSafeSummary: Partial<BookingDraft> | null;

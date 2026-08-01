@@ -1,4 +1,5 @@
 import { IntentClassificationResult, SessionConversationState } from "./types";
+import { isContextualFollowUp } from "./contextResolver";
 
 const CANCEL_TRIGGERS = [
   "cancel booking",
@@ -56,6 +57,10 @@ const KNOWLEDGE_TRIGGERS = [
   "when is",
   "where is",
   "included in",
+  "included",
+  "contain",
+  "contains",
+  "spicy",
   "menu",
   "breakfast",
   "lunch",
@@ -74,6 +79,11 @@ const KNOWLEDGE_TRIGGERS = [
   "kids",
   "children rate",
   "towel",
+  "friday",
+  "acoustic duo",
+  "blue horizon",
+  "free",
+  "van",
 ];
 
 const GREETING_TRIGGERS = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "ayubowan", "ආයුබෝවන්"];
@@ -105,7 +115,13 @@ export function classifyIntent(
     return { primaryIntent: "payment_slip", secondaryIntents: [], confidence: 0.95 };
   }
 
-  // 5. Knowledge Question (High Priority Over Field Answers)
+  // 5. Contextual Follow-up Detection (High Priority Knowledge Resolution)
+  const isFollowUp = isContextualFollowUp(userMessage, state);
+  if (isFollowUp) {
+    return { primaryIntent: "knowledge_question", secondaryIntents, confidence: 0.98, isFollowUp: true };
+  }
+
+  // 6. Direct Knowledge Question
   const isKnowledge = KNOWLEDGE_TRIGGERS.some((t) => lower.includes(t));
   if (isKnowledge) {
     if (lower.includes("book") || lower.includes("reserve")) {
@@ -114,17 +130,17 @@ export function classifyIntent(
     return { primaryIntent: "knowledge_question", secondaryIntents, confidence: 0.95 };
   }
 
-  // 6. Booking Start Trigger
+  // 7. Booking Start Trigger
   if (BOOKING_START_TRIGGERS.some((t) => lower.includes(t))) {
     return { primaryIntent: "booking_start", secondaryIntents: [], confidence: 0.95 };
   }
 
-  // 7. Greeting Trigger
+  // 8. Greeting Trigger
   if (GREETING_TRIGGERS.some((t) => lower === t || lower.startsWith(t + " ") || lower.endsWith(" " + t))) {
     return { primaryIntent: "greeting", secondaryIntents: [], confidence: 0.9 };
   }
 
-  // 8. Booking Field Answer (ONLY if booking flow is currently active AND NOT a knowledge question)
+  // 9. Booking Field Answer (ONLY if booking flow is currently active AND NOT a knowledge question)
   if (state.activeFlow === "booking" && state.bookingStage) {
     return { primaryIntent: "booking_field_answer", secondaryIntents: [], confidence: 0.85 };
   }
