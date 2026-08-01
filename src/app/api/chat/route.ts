@@ -18,6 +18,19 @@ export interface MediaItem {
   description?: string | null;
 }
 
+export interface ToolRequest {
+  tool: string;
+  status: "simulation";
+  parameters?: Record<string, unknown>;
+}
+
+export interface ConversationState {
+  activeFlow?: "none" | "booking" | "itinerary" | "complaint" | "emergency";
+  bookingStage?: string | null;
+  missingFields?: string[];
+  knownDetails?: Record<string, unknown>;
+}
+
 export interface ExtractedLead {
   name?: string | null;
   email?: string | null;
@@ -26,6 +39,7 @@ export interface ExtractedLead {
   checkOut?: string | null;
   guestCount?: number | null;
   roomPreference?: string | null;
+  specialRequests?: string[];
   message?: string;
 }
 
@@ -34,71 +48,79 @@ export interface StructuredAgentResponse {
   badge: string;
   leadCaptured: boolean;
   staffAlerted: boolean;
-  intent?: "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "handoff";
+  intent?: "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "complaint" | "emergency" | "itinerary" | "transport" | "handoff";
+  intents?: string[];
   language?: "en" | "si" | "singlish";
+  sentiment?: "positive" | "neutral" | "confused" | "frustrated" | "angry" | "urgent";
+  priority?: "low" | "normal" | "high" | "urgent";
   chips?: string[];
   media?: MediaItem[];
+  toolRequests?: ToolRequest[];
+  conversationState?: ConversationState;
   lead?: ExtractedLead | null;
 }
 
 const SYSTEM_INSTRUCTION = `
-You are Anya, the warm, polite, professional, and helpful Digital Guest Receptionist & Sales Representative at "${PROPERTY_CONFIG.name}".
+You are Anya, the warm, polite, professional, and context-aware Digital Guest Receptionist & Sales Representative at "${PROPERTY_CONFIG.name}".
+Property Timezone: ${PROPERTY_CONFIG.timezone}.
 
-AGENT IDENTITY & HOSPITALITY VOICE:
-- Name: Anya
-- Role: Digital Guest Receptionist & Booking Assistant.
-- Tone: Warm, hospitable, polite, concise, natural. Never sound robotic or generic.
-- Use natural hospitality phrases: "We'd love to welcome you", "Thank you for your enquiry", "I'd be happy to help", "Let me check that for you", "We'd be delighted to host you."
-- Avoid generic phrases like "According to our information".
+AGENT PERSONA & HOSPITALITY VOICE:
+- Tone: Warm, hospitable, empathetic, polite, concise, natural.
+- Hospitality Phrases: "We'd love to welcome you", "Thank you for your enquiry", "I'd be happy to help", "Let me check that for you", "We'd be delighted to host you."
+- Avoid generic AI phrases like "According to our information".
 
-WHATSAPP-STYLE FORMATTING:
-- Format replies cleanly with short scannable lines and emojis:
-  ✨ Includes
-  • Item 1
-  • Item 2
-  💰 Price details
-  📍 Location details
+MULTI-INTENT HANDLING (CRITICAL):
+- When a guest message contains multiple requests (e.g. late check-in + child gluten-free food + sea view room + late-night room service), address EVERY single requirement in structured scannable sections:
+  🌙 Late Check-in
+  🌊 Sea-view Room
+  🍽 Dietary Requirement
+  🛎 Room Service
+  📋 Next Step
 
-LANGUAGE BEHAVIOUR (CRITICAL):
-- Detect the guest's language and reply in the EXACT same language:
-  1. English: Warm reception tone.
-  2. Sinhala (සිංහල): Natural Sri Lankan Sinhala hospitality language.
-  3. Singlish (Transliterated Sinhala/English): Authentic Singlish (e.g. "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available. Per person LKR 3,500. 5 Junction idan approximately minutes 15k wage...").
+SENTIMENT & COMPLAINT HANDLING:
+- If guest is angry or frustrated ("terrible service", "waiting for hours"):
+  1. Apologize sincerely and acknowledge the issue empathetically.
+  2. Do NOT argue or blame the guest.
+  3. Do NOT use cheerful emojis.
+  4. Set sentiment = "angry", priority = "high", staffAlerted = true, badge = "Staff Handoff Triggered".
+
+MEDICAL & EMERGENCY SAFETY (STRICT):
+- If guest mentions emergency, severe pain, bleeding, allergic reaction, fainted, fire, danger:
+  1. Clearly advise contacting local emergency services and the hotel duty manager immediately.
+  2. Do NOT diagnose, prescribe, or guarantee medical outcomes.
+  3. Set intent = "emergency", priority = "urgent", staffAlerted = true, badge = "Urgent Staff Handoff Triggered".
 
 PROPERTY KNOWLEDGE BASE:
-- Property Name: ${PROPERTY_CONFIG.name}
+- Property: ${PROPERTY_CONFIG.name}
 - Location: ${PROPERTY_CONFIG.location}. Map link: ${PROPERTY_CONFIG.googleMapsUrl}
-- Room Categories:
-  1. Premium Ocean View Suite: LKR 48,000 / night (Breakfast included, max 2 adults + 1 child)
-  2. Deluxe Garden Room: LKR 32,000 / night (Breakfast included, max 2 adults)
-  3. Private Villa with Pool: LKR 85,000 / night (Breakfast included, max 6 guests)
-- Dayout Package: LKR 3,500 per guest (Welcome drink, lunch buffet, pool access, changing room, 9:00 AM – 5:00 PM)
-- Times: Check-in ${PROPERTY_CONFIG.checkInTime} | Check-out ${PROPERTY_CONFIG.checkOutTime} | Breakfast ${PROPERTY_CONFIG.breakfastHours}
+- Rooms: Premium Ocean View Suite (LKR 48,000/night), Deluxe Garden Room (LKR 32,000/night), Private Villa with Pool (LKR 85,000/night).
+- Dayout Package: LKR 3,500 per guest (9:00 AM – 5:00 PM, welcome drink, lunch buffet, pool access).
+- Times: Check-in ${PROPERTY_CONFIG.checkInTime} | Check-out ${PROPERTY_CONFIG.checkOutTime} | Reception: ${PROPERTY_CONFIG.receptionHours} | Late Check-in: ${PROPERTY_CONFIG.lateCheckInPolicy} | Room Service: ${PROPERTY_CONFIG.roomServiceHours}
+- Dietary Support: ${PROPERTY_CONFIG.dietarySupport.join(", ")}
 
-SIMULATED DEMO AVAILABILITY & PAYMENT:
-- Always frame availability answers as simulated demo data: "For this demo, our sample availability shows..."
-- Never claim a real booking is confirmed.
-- Payment link: "${PROPERTY_CONFIG.demoPaymentUrl}" clearly labeled "Demo Payment Link Preview".
+TOOL ROUTER (SIMULATIONS ONLY):
+- Allowed tool names ONLY: ${JSON.stringify(PROPERTY_CONFIG.allowedTools)}
+- Output simulation tool requests in "toolRequests" when relevant (e.g., weather, local_events, transport_reschedule, itinerary, pms_availability).
 
 QUICK ACTION CHIPS:
-- Provide 2-4 contextual action chip labels from this allowed list ONLY:
-  ["View Photos", "View Menu", "Check Demo Availability", "Start Booking", "Book This Room", "View Directions", "Airport Transfer", "Spa Packages", "Candlelight Dinner", "Speak to Staff"]
+- Provide 2-4 contextual chip labels from this allowed list ONLY:
+  ${JSON.stringify(PROPERTY_CONFIG.allowedChips)}
 
-LEAD CAPTURE RULES (STRICT):
-- Trigger "leadCaptured": true ONLY when meaningful contact or booking details are provided (e.g. Name + Email, Name + Phone, Stay Dates + Contact).
-- Do NOT capture leads for general FAQs, room rate questions, breakfast questions, map requests, or photo requests.
-
-HUMAN HANDOFF:
-- Trigger "staffAlerted": true and badge "Staff Handoff Triggered" for wedding groups, discounts, complaints, corporate buyouts, or manager requests.
+CONVERSATION MEMORY & GUIDED BOOKING:
+- Remember details already provided in conversation history (dates, guest count, names, room preferences).
+- Guide booking step-by-step: Check-in date -> Check-out date -> Guest count -> Room preference -> Name -> Contact details.
 
 REQUIRED OUTPUT JSON SCHEMA:
 {
   "reply": "Conversational text response",
-  "badge": "Short 2-4 word label (e.g. 'Anya Receptionist', 'Property Knowledge', 'Demo Availability', 'Staff Handoff Triggered')",
+  "badge": "Short 2-4 word label (e.g. 'Anya Receptionist', 'Property Knowledge', 'Demo Availability', 'Staff Handoff Triggered', 'Urgent Staff Handoff Triggered')",
   "leadCaptured": boolean,
   "staffAlerted": boolean,
-  "intent": "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "handoff",
+  "intent": "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "complaint" | "emergency" | "itinerary" | "transport" | "handoff",
+  "intents": ["array of intent strings"],
   "language": "en" | "si" | "singlish",
+  "sentiment": "positive" | "neutral" | "confused" | "frustrated" | "angry" | "urgent",
+  "priority": "low" | "normal" | "high" | "urgent",
   "chips": ["array of allowed chip strings"],
   "media": [
     {
@@ -108,6 +130,19 @@ REQUIRED OUTPUT JSON SCHEMA:
       "description": "string or null"
     }
   ],
+  "toolRequests": [
+    {
+      "tool": "string",
+      "status": "simulation",
+      "parameters": {}
+    }
+  ],
+  "conversationState": {
+    "activeFlow": "none" | "booking" | "itinerary" | "complaint" | "emergency",
+    "bookingStage": "string or null",
+    "missingFields": ["array of missing field strings"],
+    "knownDetails": {}
+  },
   "lead": {
     "name": "string or null",
     "email": "string or null",
@@ -116,6 +151,7 @@ REQUIRED OUTPUT JSON SCHEMA:
     "checkOut": "YYYY-MM-DD or null",
     "guestCount": number or null,
     "roomPreference": "string or null",
+    "specialRequests": ["array of string requests"],
     "message": "summary string"
   }
 }
@@ -128,28 +164,143 @@ function filterAllowedChips(chipsInput?: unknown): string[] {
   );
 }
 
+function filterAllowedTools(toolsInput?: unknown): ToolRequest[] {
+  if (!Array.isArray(toolsInput)) return [];
+  return toolsInput
+    .filter(
+      (item: Record<string, unknown>): item is Record<string, unknown> =>
+        item && typeof item.tool === "string" && PROPERTY_CONFIG.allowedTools.includes(item.tool.trim())
+    )
+    .map((item: Record<string, unknown>) => ({
+      tool: item.tool as string,
+      status: "simulation" as const,
+      parameters: typeof item.parameters === "object" && item.parameters ? (item.parameters as Record<string, unknown>) : {},
+    }));
+}
+
 function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   const lower = userMessage.toLowerCase();
 
-  // Handoff Check
+  // Emergency / Medical Check
   if (
-    lower.includes("human") ||
-    lower.includes("staff") ||
-    lower.includes("manager") ||
-    lower.includes("wedding") ||
-    lower.includes("discount") ||
-    lower.includes("event") ||
-    lower.includes("complaint")
+    lower.includes("emergency") ||
+    lower.includes("chest pain") ||
+    lower.includes("bleeding") ||
+    lower.includes("breathing") ||
+    lower.includes("allergic") ||
+    lower.includes("fainted") ||
+    lower.includes("fire") ||
+    lower.includes("danger")
   ) {
     return {
       reply:
-        "I'd be happy to arrange that! I will hand this over to our reservations manager so they can assist you personally with special group arrangements.",
+        "This may require urgent assistance. Please contact local emergency services and the hotel duty manager immediately. I have marked this conversation as urgent for staff follow-up.",
+      badge: "Urgent Staff Handoff Triggered",
+      leadCaptured: false,
+      staffAlerted: true,
+      intent: "emergency",
+      intents: ["emergency", "handoff"],
+      language: "en",
+      sentiment: "urgent",
+      priority: "urgent",
+      chips: ["Speak to Staff", "View Directions"],
+      toolRequests: [{ tool: "staff_handoff", status: "simulation", parameters: { priority: "urgent" } }],
+      lead: null,
+    };
+  }
+
+  // Angry Complaint Check
+  if (lower.includes("terrible") || lower.includes("worst") || lower.includes("disappointed") || lower.includes("unacceptable")) {
+    return {
+      reply:
+        "I'm very sorry about this experience. I'll flag this for immediate human follow-up so a manager can assist you personally.",
       badge: "Staff Handoff Triggered",
       leadCaptured: false,
       staffAlerted: true,
-      intent: "handoff",
+      intent: "complaint",
+      intents: ["complaint", "handoff"],
       language: "en",
-      chips: ["Start Booking", "View Directions"],
+      sentiment: "angry",
+      priority: "high",
+      chips: ["Speak to Staff"],
+      toolRequests: [{ tool: "staff_handoff", status: "simulation", parameters: { priority: "high" } }],
+      lead: null,
+    };
+  }
+
+  // Weather Request Check
+  if (lower.includes("weather") || lower.includes("rain") || lower.includes("forecast") || lower.includes("sunny")) {
+    return {
+      reply:
+        `For this demonstration, the sample forecast shows ${PROPERTY_CONFIG.demoWeather.condition} with temperatures around ${PROPERTY_CONFIG.demoWeather.temperature}. ${PROPERTY_CONFIG.demoWeather.suggestion}`,
+      badge: "Weather Preview",
+      leadCaptured: false,
+      staffAlerted: false,
+      intent: "faq",
+      intents: ["weather", "faq"],
+      language: "en",
+      chips: ["View Photos", "Plan My Stay", "Start Booking"],
+      toolRequests: [{ tool: "weather", status: "simulation", parameters: { location: PROPERTY_CONFIG.location } }],
+      lead: null,
+    };
+  }
+
+  // Local Events Check
+  if (lower.includes("event") || lower.includes("happening") || lower.includes("schedule") || lower.includes("activity")) {
+    const eventList = PROPERTY_CONFIG.localEvents.map((e) => `• ${e.title} (${e.time}) — ${e.description}`).join("\n");
+    return {
+      reply:
+        `Here is a preview of today's sample events at Aura Boutique Hotel & Villa:\n\n${eventList}\n\nIn a production setup, this displays live hotel activities!`,
+      badge: "Local Events Preview",
+      leadCaptured: false,
+      staffAlerted: false,
+      intent: "faq",
+      intents: ["local_events", "faq"],
+      language: "en",
+      chips: ["View Menu", "Spa Packages", "Start Booking"],
+      toolRequests: [{ tool: "local_events", status: "simulation" }],
+      lead: null,
+    };
+  }
+
+  // Flight Delay / Transport Check
+  if (lower.includes("flight") || lower.includes("delay") || lower.includes("pickup") || lower.includes("transfer")) {
+    return {
+      reply:
+        "I understand your flight is delayed! In a live setup, our transport integration can reschedule your airport pickup. Would you like me to log your new estimated arrival time for our duty team?",
+      badge: "Transport Preview",
+      leadCaptured: false,
+      staffAlerted: false,
+      intent: "transport",
+      intents: ["transport_reschedule", "faq"],
+      language: "en",
+      chips: ["Airport Transfer", "Speak to Staff", "Start Booking"],
+      toolRequests: [{ tool: "transport_reschedule", status: "simulation" }],
+      lead: null,
+    };
+  }
+
+  // Complex Sinhala/Singlish multi-intent check
+  if (lower.includes("check-in") && (lower.includes("gluten") || lower.includes("sea view") || lower.includes("room service"))) {
+    return {
+      reply:
+        "Ayubowan! 🌺 Thank you for your request. Here are the details for your stay:\n\n🌙 Late Check-in\nYes, 24/7 late check-in is available at 10:00 PM upon request.\n\n🌊 Sea-view Room\nWe recommend our Premium Ocean View Suite (LKR 48,000/night) featuring a panoramic ocean balcony.\n\n🍽 Dietary Requirement\nOur culinary team provides certified gluten-free meals for your child.\n\n🛎 Room Service\nOur late-night room service menu is accessible 24/7.\n\n📋 Next Step\nWould you like me to send preview photos or record your booking dates?",
+      badge: "Multi-Intent Assist",
+      leadCaptured: false,
+      staffAlerted: false,
+      intent: "faq",
+      intents: ["availability", "dietary", "room_service", "sea_view"],
+      language: lower.includes("ලබන") ? "si" : "singlish",
+      chips: ["View Photos", "Start Booking", "Check Demo Availability"],
+      media: [
+        {
+          type: "room",
+          title: "Premium Ocean View Suite",
+          url: "/images/ocean-view-suite.jpg",
+          description: "LKR 48,000 / night • Ocean Balcony Suite",
+        },
+      ],
+      toolRequests: [{ tool: "pms_availability", status: "simulation" }],
       lead: null,
     };
   }
@@ -177,50 +328,6 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
     };
   }
 
-  // Sinhala Dayout or Room FAQ check
-  if (lower.includes("ලබන") || lower.includes("සෙනසුරාදා") || lower.includes("පැකේජ්") || lower.includes("කාමර")) {
-    return {
-      reply:
-        "ආයුබෝවන්! 🌺 ඔව්, Aura Boutique Hotel & Villa හි Dayout Package එක (පුද්ගලයෙකුට LKR 3,500) සහ කාමර පවතිනවා. (Demo availability)\n\nවැඩිදුර විස්තර හෝ Booking Enquiry එකක් තැබීමට අවශ්‍යද?",
-      badge: "Property Knowledge",
-      leadCaptured: false,
-      staffAlerted: false,
-      intent: "faq",
-      language: "si",
-      chips: ["Check Demo Availability", "View Photos", "Start Booking"],
-      lead: null,
-    };
-  }
-
-  // Photo / Media Request
-  if (lower.includes("photo") || lower.includes("image") || lower.includes("picture") || lower.includes("look")) {
-    return {
-      reply:
-        "Here are sample preview cards of our Premium Ocean View Suite and Deluxe Garden Room at Aura Boutique Hotel & Villa.",
-      badge: "Media Preview",
-      leadCaptured: false,
-      staffAlerted: false,
-      intent: "media",
-      language: "en",
-      chips: ["Book This Room", "Check Demo Availability", "Spa Packages"],
-      media: [
-        {
-          type: "room",
-          title: "Premium Ocean View Suite",
-          url: "/images/ocean-view-suite.jpg",
-          description: "LKR 48,000 / night • Panoramic Ocean Balcony",
-        },
-        {
-          type: "room",
-          title: "Deluxe Garden Room",
-          url: "/images/garden-room.jpg",
-          description: "LKR 32,000 / night • Tropical Garden Sanctuary",
-        },
-      ],
-      lead: null,
-    };
-  }
-
   // Meaningful Lead Capture Check
   const emailMatch = userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
   const email = emailMatch ? emailMatch[0] : null;
@@ -238,7 +345,7 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   if (email || (name && (checkIn || guestCount))) {
     return {
       reply:
-        `Thank you, ${name || "Guest"}! We'd be delighted to host you. I have registered your reservation enquiry for Aura Boutique Hotel & Villa. Our reservations team will contact you at ${email || "your email"}.\n\nWould you like me to add an airport transfer or candlelight dinner to your enquiry?`,
+        `Thank you, ${name || "Guest"}! We'd be delighted to host you. I have registered your reservation enquiry for ${PROPERTY_CONFIG.name}. Our reservations team will contact you at ${email || "your email"}.\n\nWould you like me to add an airport transfer or candlelight dinner to your enquiry?`,
       badge: "Booking Logged",
       leadCaptured: true,
       staffAlerted: false,
@@ -257,32 +364,9 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
     };
   }
 
-  // Room Rate / Availability FAQ
-  if (lower.includes("room") || lower.includes("price") || lower.includes("suite") || lower.includes("rate") || lower.includes("availab")) {
-    return {
-      reply:
-        "For this demo, our sample availability shows Deluxe Garden Rooms (LKR 32,000/night) and Premium Ocean View Suites (LKR 48,000/night) available. In a live hotel setup, I would check your connected PMS before confirming.",
-      badge: "Demo Availability",
-      leadCaptured: false,
-      staffAlerted: false,
-      intent: "availability",
-      language: "en",
-      chips: ["View Photos", "Start Booking", "Airport Transfer"],
-      media: [
-        {
-          type: "room",
-          title: "Premium Ocean View Suite",
-          url: "/images/ocean-view-suite.jpg",
-          description: "LKR 48,000 / night • King Bed & Ocean Balcony",
-        },
-      ],
-      lead: null,
-    };
-  }
-
   return {
     reply:
-      "Ayubowan! 🌺 I'm Anya, your Digital Guest Receptionist for Aura Boutique Hotel & Villa. We'd love to welcome you! How may I assist with your room rates, dayout package, or stay dates today?",
+      `Ayubowan! 🌺 I'm Anya, your Digital Guest Receptionist for ${PROPERTY_CONFIG.name}. We'd love to welcome you! How may I assist with your room rates, dayout package, or stay dates today?`,
     badge: "Anya Receptionist",
     leadCaptured: false,
     staffAlerted: false,
@@ -332,6 +416,7 @@ function parseAndValidateGeminiResponse(rawText: string): StructuredAgentRespons
         checkOut: typeof parsed.lead.checkOut === "string" ? parsed.lead.checkOut : null,
         guestCount: typeof parsed.lead.guestCount === "number" ? parsed.lead.guestCount : null,
         roomPreference: typeof parsed.lead.roomPreference === "string" ? parsed.lead.roomPreference : null,
+        specialRequests: Array.isArray(parsed.lead.specialRequests) ? parsed.lead.specialRequests.map(String) : [],
         message: typeof parsed.lead.message === "string" ? parsed.lead.message : "",
       };
     }
@@ -342,9 +427,14 @@ function parseAndValidateGeminiResponse(rawText: string): StructuredAgentRespons
       leadCaptured: Boolean(parsed.leadCaptured),
       staffAlerted: Boolean(parsed.staffAlerted),
       intent: parsed.intent || "faq",
+      intents: Array.isArray(parsed.intents) ? parsed.intents.map(String) : [parsed.intent || "faq"],
       language: parsed.language || "en",
+      sentiment: parsed.sentiment || "neutral",
+      priority: parsed.priority || "normal",
       chips: filterAllowedChips(parsed.chips),
       media: mediaItems,
+      toolRequests: filterAllowedTools(parsed.toolRequests),
+      conversationState: typeof parsed.conversationState === "object" ? parsed.conversationState : undefined,
       lead: leadData,
     };
   } catch {
@@ -439,7 +529,7 @@ export async function POST(req: NextRequest) {
           check_out: leadInfo?.checkOut || null,
           guest_count: leadInfo?.guestCount || null,
           message: leadInfo?.message || userMessage,
-          source: "AI Guest Agent (Anya)",
+          source: "AI Guest Agent (Anya V5)",
           status: "new",
         };
 
@@ -455,9 +545,14 @@ export async function POST(req: NextRequest) {
       leadSaved,
       staffAlerted: agentResponse.staffAlerted,
       intent: agentResponse.intent || "faq",
+      intents: agentResponse.intents || ["faq"],
       language: agentResponse.language || "en",
+      sentiment: agentResponse.sentiment || "neutral",
+      priority: agentResponse.priority || "normal",
       chips: agentResponse.chips || ["Check Demo Availability", "View Photos", "Start Booking"],
       media: agentResponse.media || [],
+      toolRequests: agentResponse.toolRequests || [],
+      conversationState: agentResponse.conversationState,
       latencyMs: Date.now() - startTime,
       source: responseSource,
     });
@@ -470,9 +565,13 @@ export async function POST(req: NextRequest) {
       leadSaved: false,
       staffAlerted: false,
       intent: "faq",
+      intents: ["faq"],
       language: "en",
+      sentiment: "neutral",
+      priority: "normal",
       chips: ["Check Demo Availability", "View Photos", "Start Booking"],
       media: [],
+      toolRequests: [],
       latencyMs: Date.now() - startTime,
       source: "fallback-critical-error",
     });

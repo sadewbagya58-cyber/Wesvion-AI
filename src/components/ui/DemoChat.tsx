@@ -17,12 +17,15 @@ import {
   CreditCard,
   ExternalLink,
   X,
-  Sparkles,
   BedDouble,
   Utensils,
-  Calendar,
   HelpCircle,
-  Camera
+  Camera,
+  CloudSun,
+  CalendarDays,
+  PlaneTakeoff,
+  ConciergeBell,
+  AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROPERTY_CONFIG } from "@/lib/propertyConfig";
@@ -46,6 +49,12 @@ export interface MediaItem {
   description?: string | null;
 }
 
+export interface ToolRequest {
+  tool: string;
+  status: "simulation";
+  parameters?: Record<string, unknown>;
+}
+
 export interface ChatMessage {
   id: string;
   sender: "guest" | "ai" | "system";
@@ -55,16 +64,19 @@ export interface ChatMessage {
   leadCaptured?: boolean;
   leadSaved?: boolean;
   staffAlerted?: boolean;
+  sentiment?: string;
+  priority?: string;
   chips?: string[];
   media?: MediaItem[];
+  toolRequests?: ToolRequest[];
   channel?: DemoChannel;
 }
 
 const PRESET_EMPTY_ACTIONS = [
   {
     icon: BedDouble,
-    label: "Room Rates",
-    query: "What are your room rates and room types?",
+    label: "Multi-Intent Query",
+    query: "ලබන Friday රෑ 10ට check-in වෙන්න පුළුවන්ද? අපේ බබාට gluten-free කෑම ඕනේ, late-night room service තියෙනවද? Sea view room එකක් ඕනේ.",
   },
   {
     icon: Utensils,
@@ -77,14 +89,14 @@ const PRESET_EMPTY_ACTIONS = [
     query: "Can I see the Ocean View Suite photos?",
   },
   {
-    icon: Calendar,
-    label: "Check Demo Availability",
-    query: "Do you have an Ocean View Suite available next Saturday?",
+    icon: CloudSun,
+    label: "Demo Weather Forecast",
+    query: "What is the weather forecast tomorrow at the hotel?",
   },
   {
-    icon: Sparkles,
-    label: "Start Booking Enquiry",
-    query: "My name is Sarah. I'd like to book an Ocean View Suite from August 15 to August 18 for 2 guests. My email is sarah@example.com.",
+    icon: CalendarDays,
+    label: "Local Hotel Events",
+    query: "What local events are happening at the hotel today?",
   },
   {
     icon: HelpCircle,
@@ -123,7 +135,6 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
     setInputText("");
     setIsTyping(true);
 
-    // Natural 800ms receptionist delay simulation while waiting for API
     const delayPromise = new Promise((resolve) => setTimeout(resolve, 800));
 
     try {
@@ -151,6 +162,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
       const isStaff = Boolean(data.staffAlerted || scenarioOverride?.staffAlerted);
       const mediaItems = (data.media || scenarioOverride?.media || []) as MediaItem[];
       const actionChips = (data.chips || ["Check Demo Availability", "View Photos", "Start Booking"]) as string[];
+      const tools = (data.toolRequests || scenarioOverride?.toolRequests || []) as ToolRequest[];
 
       if (isLead || isSaved) setLeadCount((prev) => prev + 1);
       if (isStaff) setStaffAlertActive(true);
@@ -164,8 +176,11 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         leadCaptured: isLead,
         leadSaved: isSaved,
         staffAlerted: isStaff,
+        sentiment: data.sentiment || "neutral",
+        priority: data.priority || "normal",
         chips: actionChips,
         media: mediaItems,
+        toolRequests: tools,
         channel: activeChannel,
       };
 
@@ -188,6 +203,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         staffAlerted: Boolean(scenarioOverride?.staffAlerted),
         chips: ["Check Demo Availability", "View Photos", "Start Booking"],
         media: (scenarioOverride?.media || []) as MediaItem[],
+        toolRequests: [],
         channel: activeChannel,
       };
 
@@ -312,7 +328,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold text-slate-900">
-                Anya — AI Guest Receptionist
+                Anya — AI Guest Receptionist (V5 Intelligence)
               </h3>
               <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium flex items-center gap-1">
                 <Check className="w-3 h-3 text-sky-600" /> {PROPERTY_CONFIG.name}
@@ -320,7 +336,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
             </div>
             <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-sky-600" />
-              <span>Digital Hotel Receptionist • Multilingual Support (EN / SI / Singlish)</span>
+              <span>Context-Aware Multi-Intent Hospitality Agent (EN / SI / Singlish)</span>
             </p>
           </div>
         </div>
@@ -342,27 +358,6 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      {/* Process Indicator Bar */}
-      <div className="bg-slate-50 px-4 py-2 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 overflow-x-auto whitespace-nowrap gap-4 font-medium">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-sky-600" />
-          <span>1. Guest Asks</span>
-        </div>
-        <span>→</span>
-        <div className="flex items-center gap-1.5">
-          <span>2. Anya Instant Reply</span>
-        </div>
-        <span>→</span>
-        <div className="flex items-center gap-1.5">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          <span>3. Details Captured</span>
-        </div>
-        <span>→</span>
-        <div className="flex items-center gap-1.5">
-          <span>4. Team Handoff</span>
-        </div>
-      </div>
-
       {/* Chat Conversation Body */}
       <div
         className={cn(
@@ -381,7 +376,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
                 Welcome to {PROPERTY_CONFIG.name}
               </h3>
               <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                👋 Hi, I&apos;m Anya — your Digital Guest Receptionist. I can help with room rates, dayout packages, photos, directions, demo availability, and booking enquiries.
+                👋 Hi, I&apos;m Anya — your Digital Guest Receptionist. I can handle complex multi-intent requests, room rates, dayout packages, weather forecasts, and trip itineraries.
               </p>
             </div>
 
@@ -426,6 +421,14 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
             </div>
 
             <div className="space-y-2">
+              {/* Urgent Emergency / Angry Alert Banner */}
+              {msg.priority === "urgent" && (
+                <div className="bg-red-50 border border-red-200 text-red-900 p-3 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>Urgent Staff Handoff Triggered</span>
+                </div>
+              )}
+
               <div
                 className={cn(
                   "p-4 rounded-2xl text-sm leading-relaxed shadow-2xs whitespace-pre-line relative",
@@ -442,7 +445,88 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
                 </div>
               </div>
 
-              {/* Rich Hospitality Cards (Airbnb/Booking.com style) */}
+              {/* Tool Simulations Cards Rendering */}
+              {msg.toolRequests && msg.toolRequests.length > 0 && (
+                <div className="space-y-2 pt-1">
+                  {msg.toolRequests.map((toolReq, tIdx) => (
+                    <div key={tIdx}>
+                      {toolReq.tool === "weather" && (
+                        <div className="p-3.5 bg-sky-50/70 border border-sky-200 rounded-2xl text-xs space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-sky-900 flex items-center gap-1.5">
+                              <CloudSun className="w-4 h-4 text-sky-700" />
+                              Weather Integration Preview
+                            </span>
+                            <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-sky-200 text-sky-800">
+                              Simulated Data
+                            </span>
+                          </div>
+                          <p className="text-slate-700">
+                            <strong>Forecast:</strong> {PROPERTY_CONFIG.demoWeather.condition} ({PROPERTY_CONFIG.demoWeather.temperature}). {PROPERTY_CONFIG.demoWeather.suggestion}
+                          </p>
+                        </div>
+                      )}
+
+                      {toolReq.tool === "local_events" && (
+                        <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-amber-900 flex items-center gap-1.5">
+                              <CalendarDays className="w-4 h-4 text-amber-700" />
+                              Local Events Preview
+                            </span>
+                            <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-amber-200 text-amber-800">
+                              Demo Schedule
+                            </span>
+                          </div>
+                          <div className="space-y-1 text-slate-700">
+                            {PROPERTY_CONFIG.localEvents.map((ev, eIdx) => (
+                              <p key={eIdx}>
+                                <strong>{ev.title}</strong> ({ev.time}) — {ev.description}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {toolReq.tool === "transport_reschedule" && (
+                        <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-emerald-900 flex items-center gap-1.5">
+                              <PlaneTakeoff className="w-4 h-4 text-emerald-700" />
+                              Transport Reschedule Preview
+                            </span>
+                            <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-emerald-200 text-emerald-800">
+                              Simulation
+                            </span>
+                          </div>
+                          <p className="text-slate-700">
+                            Airport transfer delay logged. Drivers will be notified automatically upon flight number update.
+                          </p>
+                        </div>
+                      )}
+
+                      {toolReq.tool === "service_request" && (
+                        <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-2xl text-xs space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-purple-900 flex items-center gap-1.5">
+                              <ConciergeBell className="w-4 h-4 text-purple-700" />
+                              Service Request Preview
+                            </span>
+                            <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-purple-200 text-purple-800">
+                              Logged
+                            </span>
+                          </div>
+                          <p className="text-slate-700">
+                            In-house guest service request registered for reception team follow-up.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Rich Media Cards Component */}
               {msg.media && msg.media.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   {msg.media.map((item, index) => (

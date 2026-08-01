@@ -9,16 +9,34 @@ export interface RoomConfig {
   maxGuests: string;
 }
 
+export interface DemoEvent {
+  title: string;
+  time: string;
+  location: string;
+  description: string;
+}
+
 export interface PropertyConfig {
   id: string;
   name: string;
   tagline: string;
   location: string;
+  timezone: string;
   googleMapsUrl: string;
   demoPaymentUrl: string;
   checkInTime: string;
   checkOutTime: string;
+  receptionHours: string;
+  lateCheckInPolicy: string;
+  roomServiceHours: string;
   breakfastHours: string;
+  dietarySupport: string[];
+  demoWeather: {
+    condition: string;
+    temperature: string;
+    suggestion: string;
+  };
+  localEvents: DemoEvent[];
   rooms: RoomConfig[];
   dayoutPackage: {
     price: string;
@@ -26,6 +44,7 @@ export interface PropertyConfig {
     hours: string;
     includes: string[];
   };
+  allowedTools: string[];
   allowedChips: string[];
 }
 
@@ -34,11 +53,41 @@ export const PROPERTY_CONFIG: PropertyConfig = {
   name: "Aura Boutique Hotel & Villa",
   tagline: "Boutique Hospitality & Oceanfront Luxury",
   location: "Around 15 minutes from 5 Junction",
+  timezone: "Asia/Colombo",
   googleMapsUrl: "https://maps.google.com/?q=Aura+Boutique+Hotel+Villa",
   demoPaymentUrl: "https://wesvion.ai/demo-payment",
   checkInTime: "3:00 PM",
   checkOutTime: "11:00 AM",
-  breakfastHours: "7:00 AM to 10:30 AM",
+  receptionHours: "24/7 Front Desk Reception",
+  lateCheckInPolicy: "24/7 Late Check-in available upon request. Prior notification appreciated.",
+  roomServiceHours: "24/7 Late-Night Dining Menu available",
+  breakfastHours: "7:00 AM to 10:30 AM (Ocean Terrace Restaurant)",
+  dietarySupport: ["Gluten-free", "Vegan", "Halal", "Jain", "Allergen-conscious"],
+  demoWeather: {
+    condition: "Light afternoon rain",
+    temperature: "27°C",
+    suggestion: "Carry a light umbrella for evening ocean walks.",
+  },
+  localEvents: [
+    {
+      title: "Sunset Calypso Band",
+      time: "6:00 PM – 8:30 PM",
+      location: "Ocean Terrace Lounge",
+      description: "Live acoustic tropical rhythms with complimentary sunset mocktails.",
+    },
+    {
+      title: "Sunrise Beach Yoga",
+      time: "6:30 AM – 7:30 AM",
+      location: "Ocean Pavilion",
+      description: "Guided morning mindfulness & oceanfront yoga session for guests.",
+    },
+    {
+      title: "Chef's Seafood Barbecue",
+      time: "7:00 PM – 10:00 PM",
+      location: "Garden Terrace Grill",
+      description: "Fresh catch ocean barbecue with custom Sri Lankan spice marinades.",
+    },
+  ],
   rooms: [
     {
       id: "ocean-suite",
@@ -76,16 +125,32 @@ export const PROPERTY_CONFIG: PropertyConfig = {
     hours: "9:00 AM – 5:00 PM",
     includes: ["Welcome Drink", "Lunch Buffet", "Pool Access", "Changing Room Facilities"],
   },
+  allowedTools: [
+    "pms_availability",
+    "dynamic_rate",
+    "weather",
+    "local_events",
+    "maps",
+    "itinerary",
+    "transport_reschedule",
+    "service_request",
+    "staff_handoff",
+    "payment_preview",
+    "media_gallery",
+    "restaurant_menu",
+  ],
   allowedChips: [
     "View Photos",
     "View Menu",
     "Check Demo Availability",
     "Start Booking",
-    "Book This Room",
     "View Directions",
     "Airport Transfer",
     "Spa Packages",
     "Candlelight Dinner",
+    "Plan My Stay",
     "Speak to Staff",
+    "Room Service",
+    "Late Checkout",
   ],
 };
