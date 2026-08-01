@@ -8,10 +8,15 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    return response;
+  }
+
+  try {
+    const supabase = createServerClient(url, key, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -28,22 +33,24 @@ export async function proxy(request: NextRequest) {
           );
         },
       },
+    });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+    const isLoginRoute = request.nextUrl.pathname === "/admin/login";
+
+    if (isAdminRoute && !isLoginRoute && !user) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
-  );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isLoginRoute = request.nextUrl.pathname === "/admin/login";
-
-  if (isAdminRoute && !isLoginRoute && !user) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
-  }
-
-  if (isLoginRoute && user) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    if (isLoginRoute && user) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+  } catch {
+    // Graceful fallback if session check fails
   }
 
   return response;
