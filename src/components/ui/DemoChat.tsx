@@ -11,13 +11,21 @@ import {
   Globe,
   MessageSquare,
   Check,
+  CheckCheck,
   MapPin,
   Image as ImageIcon,
   CreditCard,
   ExternalLink,
-  X
+  X,
+  Sparkles,
+  BedDouble,
+  Utensils,
+  Calendar,
+  HelpCircle,
+  Camera
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PROPERTY_CONFIG } from "@/lib/propertyConfig";
 
 export type DemoChannel = "website" | "whatsapp" | "instagram";
 
@@ -32,9 +40,10 @@ function InstagramIcon({ className = "w-4 h-4" }: { className?: string }) {
 }
 
 export interface MediaItem {
-  type: "image" | "map" | "payment";
+  type: "image" | "map" | "payment" | "room" | "package";
   title: string;
   url: string;
+  description?: string | null;
 }
 
 export interface ChatMessage {
@@ -46,83 +55,41 @@ export interface ChatMessage {
   leadCaptured?: boolean;
   leadSaved?: boolean;
   staffAlerted?: boolean;
+  chips?: string[];
   media?: MediaItem[];
   channel?: DemoChannel;
 }
 
-const PRESET_SCENARIOS = [
+const PRESET_EMPTY_ACTIONS = [
   {
-    label: "1. Room Rates",
-    guestQuery: "What are your room rates and room types?",
-    response:
-      "At Aura Boutique Hotel & Villa, we offer Deluxe Garden Rooms (LKR 32,000/night), Premium Ocean View Suites (LKR 48,000/night), and Private Villas with Pool (LKR 85,000/night). Breakfast is included daily!",
-    badge: "Room Rates",
+    icon: BedDouble,
+    label: "Room Rates",
+    query: "What are your room rates and room types?",
   },
   {
-    label: "2. Dayout Package",
-    guestQuery: "Hi, next Saturday dayout packages thiyenawada? 5 Junction idan kochchara durada?",
-    response:
-      "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available.\n\n👤 Per person LKR 3,500\n🍹 Welcome drink\n🍽 Lunch buffet\n🏊 Pool access\n🕘 9:00 AM – 5:00 PM\n\n📍 5 Junction idan approximately minutes 15k wage.\n\nOyata food menu eka balanna onada?",
-    badge: "Dayout Package",
-    media: [
-      {
-        type: "map" as const,
-        title: "Location Map (5 Junction - 15 mins)",
-        url: "https://maps.google.com/?q=Aura+Boutique+Hotel+Villa",
-      },
-    ],
+    icon: Utensils,
+    label: "Dayout Package",
+    query: "Hi, next Saturday dayout packages thiyenawada? 5 Junction idan kochchara durada?",
   },
   {
-    label: "3. View Room Photos",
-    guestQuery: "Can I see the Ocean View Suite photos?",
-    response:
-      "Here are preview cards of our Premium Ocean View Suite and Deluxe Garden Room at Aura Boutique Hotel & Villa.",
-    badge: "Room Photos",
-    media: [
-      {
-        type: "image" as const,
-        title: "Premium Ocean View Suite (Demo)",
-        url: "/images/ocean-view-suite.jpg",
-      },
-      {
-        type: "image" as const,
-        title: "Deluxe Garden Room (Demo)",
-        url: "/images/garden-room.jpg",
-      },
-    ],
+    icon: Camera,
+    label: "View Room Photos",
+    query: "Can I see the Ocean View Suite photos?",
   },
   {
-    label: "4. Check Demo Availability",
-    guestQuery: "Do you have an Ocean View Suite available next Saturday?",
-    response:
-      "For this demonstration, our sample availability shows two Deluxe Garden Rooms and one Premium Ocean View Suite available. In a live hotel setup, Anya would check your connected PMS before confirming availability.",
-    badge: "Demo Availability",
+    icon: Calendar,
+    label: "Check Demo Availability",
+    query: "Do you have an Ocean View Suite available next Saturday?",
   },
   {
-    label: "5. Start Booking Enquiry",
-    guestQuery: "My name is Sarah. I'd like to book an Ocean View Suite from August 15 to August 18 for 2 guests. My email is sarah@example.com.",
-    response:
-      "Thank you, Sarah! I have logged your booking enquiry for the Premium Ocean View Suite (Aug 15–18, 2 guests). Our reservations team has received your details.\n\nWould you like to add a candlelight dinner or private airport transfer to your stay?",
-    badge: "Booking Logged",
-    leadCaptured: true,
+    icon: Sparkles,
+    label: "Start Booking Enquiry",
+    query: "My name is Sarah. I'd like to book an Ocean View Suite from August 15 to August 18 for 2 guests. My email is sarah@example.com.",
   },
   {
-    label: "6. Special Request / Handoff",
-    guestQuery: "Can I get a special discount for a wedding group of 25 guests?",
-    response:
-      "I'll hand this over to our reservations manager so they can assist you personally with custom wedding group rates.",
-    badge: "Staff Handoff Triggered",
-    staffAlerted: true,
-  },
-];
-
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: "init-1",
-    sender: "ai",
-    text: "Ayubowan! 🌺 I am Anya, your Digital Guest Receptionist for Aura Boutique Hotel & Villa. How may I assist with your stay, room categories, or dayout enquiry today?",
-    timestamp: "Just now",
-    badge: "Anya Receptionist",
+    icon: HelpCircle,
+    label: "Special Request",
+    query: "Can I get a special discount for a wedding group of 25 guests?",
   },
 ];
 
@@ -132,14 +99,14 @@ function createMessageId(prefix: string): string {
 
 export default function DemoChat({ compact = false }: { compact?: boolean }) {
   const [activeChannel, setActiveChannel] = useState<DemoChannel>("website");
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [staffAlertActive, setStaffAlertActive] = useState(false);
   const [leadCount, setLeadCount] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const handleSend = async (userText: string, scenarioOverride?: typeof PRESET_SCENARIOS[0]) => {
+  const handleSend = async (userText: string, scenarioOverride?: Record<string, unknown>) => {
     if (!userText.trim() || isTyping) return;
 
     const userMsgId = createMessageId("user");
@@ -156,27 +123,34 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
     setInputText("");
     setIsTyping(true);
 
+    // Natural 800ms receptionist delay simulation while waiting for API
+    const delayPromise = new Promise((resolve) => setTimeout(resolve, 800));
+
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userText,
-          history: updatedMessages.map((m) => ({ sender: m.sender, text: m.text })),
+      const [res] = await Promise.all([
+        fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: userText,
+            history: updatedMessages.map((m) => ({ sender: m.sender, text: m.text })),
+          }),
         }),
-      });
+        delayPromise,
+      ]);
 
       if (!res.ok) {
         throw new Error(`API returned HTTP ${res.status}`);
       }
 
       const data = await res.json();
-      const replyText = data.reply || scenarioOverride?.response || "I am happy to assist with your stay at Aura Boutique Hotel & Villa.";
-      const badgeLabel = data.badge || scenarioOverride?.badge || "Anya Receptionist";
+      const replyText = data.reply || (scenarioOverride?.response as string) || "We'd be delighted to assist with your stay at Aura Boutique Hotel & Villa.";
+      const badgeLabel = data.badge || (scenarioOverride?.badge as string) || "Anya Receptionist";
       const isLead = Boolean(data.leadCaptured || scenarioOverride?.leadCaptured);
       const isSaved = Boolean(data.leadSaved);
       const isStaff = Boolean(data.staffAlerted || scenarioOverride?.staffAlerted);
-      const mediaItems = data.media || scenarioOverride?.media || [];
+      const mediaItems = (data.media || scenarioOverride?.media || []) as MediaItem[];
+      const actionChips = (data.chips || ["Check Demo Availability", "View Photos", "Start Booking"]) as string[];
 
       if (isLead || isSaved) setLeadCount((prev) => prev + 1);
       if (isStaff) setStaffAlertActive(true);
@@ -190,16 +164,18 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         leadCaptured: isLead,
         leadSaved: isSaved,
         staffAlerted: isStaff,
+        chips: actionChips,
         media: mediaItems,
         channel: activeChannel,
       };
 
       setMessages((prev) => [...prev, aiMsg]);
     } catch {
+      await delayPromise;
       const fallbackReply =
-        scenarioOverride?.response ||
-        "Check-in at Aura Boutique Hotel & Villa is from 3:00 PM, and check-out is at 11:00 AM. Breakfast is served daily from 7:00 AM at the Ocean Terrace.";
-      const fallbackBadge = scenarioOverride?.badge || "Anya Receptionist";
+        (scenarioOverride?.response as string) ||
+        "Check-in at Aura Boutique Hotel & Villa is from 3:00 PM, and check-out is at 11:00 AM. Gourmet breakfast is included daily from 7:00 AM at the Ocean Terrace.";
+      const fallbackBadge = (scenarioOverride?.badge as string) || "Anya Receptionist";
 
       const aiMsg: ChatMessage = {
         id: createMessageId("ai"),
@@ -210,7 +186,8 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         leadCaptured: Boolean(scenarioOverride?.leadCaptured),
         leadSaved: false,
         staffAlerted: Boolean(scenarioOverride?.staffAlerted),
-        media: scenarioOverride?.media || [],
+        chips: ["Check Demo Availability", "View Photos", "Start Booking"],
+        media: (scenarioOverride?.media || []) as MediaItem[],
         channel: activeChannel,
       };
 
@@ -221,10 +198,14 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
   };
 
   const handleReset = () => {
-    setMessages(INITIAL_MESSAGES);
+    setMessages([]);
     setStaffAlertActive(false);
     setLeadCount(0);
   };
+
+  const latestChips = messages.length > 0 && messages[messages.length - 1].sender === "ai"
+    ? messages[messages.length - 1].chips || []
+    : [];
 
   return (
     <div className="w-full flex flex-col card-light rounded-3xl overflow-hidden border border-slate-200/90 shadow-sm bg-white relative">
@@ -303,7 +284,6 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
 
-        {/* Channel Status Badge */}
         <div className="flex items-center gap-2">
           {activeChannel === "website" && (
             <span className="text-[11px] bg-sky-50 border border-sky-200 text-sky-800 px-2.5 py-1 rounded-full font-medium">
@@ -335,7 +315,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
                 Anya — AI Guest Receptionist
               </h3>
               <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium flex items-center gap-1">
-                <Check className="w-3 h-3 text-sky-600" /> Aura Boutique Hotel
+                <Check className="w-3 h-3 text-sky-600" /> {PROPERTY_CONFIG.name}
               </span>
             </div>
             <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
@@ -362,7 +342,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      {/* Client-Friendly Process Indicator Bar */}
+      {/* Process Indicator Bar */}
       <div className="bg-slate-50 px-4 py-2 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600 overflow-x-auto whitespace-nowrap gap-4 font-medium">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-sky-600" />
@@ -383,31 +363,49 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      {/* Quick Test Scenario Pills */}
-      <div className="bg-white px-4 py-2.5 border-b border-slate-100 flex items-center gap-2 overflow-x-auto">
-        <span className="text-xs font-semibold text-slate-500 shrink-0">
-          Try Scenarios:
-        </span>
-        <div className="flex items-center gap-2">
-          {PRESET_SCENARIOS.map((sc, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSend(sc.guestQuery, sc)}
-              className="text-xs px-3 py-1 rounded-full bg-slate-100 hover:bg-sky-50 hover:text-sky-800 text-slate-700 border border-slate-200 transition-all shrink-0 font-medium"
-            >
-              {sc.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Chat Conversation Body */}
       <div
         className={cn(
           "p-4 sm:p-6 overflow-y-auto space-y-4 bg-[#faf9f6]",
-          compact ? "h-[340px]" : "h-[450px]"
+          compact ? "h-[360px]" : "h-[480px]"
         )}
       >
+        {/* Welcome Empty State Card */}
+        {messages.length === 0 && (
+          <div className="my-auto space-y-6 max-w-md mx-auto py-6 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center mx-auto border border-sky-100">
+              <Bot className="w-6 h-6" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-serif text-slate-900">
+                Welcome to {PROPERTY_CONFIG.name}
+              </h3>
+              <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+                👋 Hi, I&apos;m Anya — your Digital Guest Receptionist. I can help with room rates, dayout packages, photos, directions, demo availability, and booking enquiries.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+              {PRESET_EMPTY_ACTIONS.map((act, idx) => {
+                const IconComponent = act.icon;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleSend(act.query)}
+                    className="p-3 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-200 rounded-2xl text-left space-y-1.5 transition-all group shadow-2xs"
+                  >
+                    <IconComponent className="w-4 h-4 text-sky-700 group-hover:scale-110 transition-transform" />
+                    <p className="text-xs font-semibold text-slate-900 group-hover:text-sky-900">
+                      {act.label}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Message Bubble Feed */}
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -430,43 +428,65 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
             <div className="space-y-2">
               <div
                 className={cn(
-                  "p-3.5 rounded-2xl text-sm leading-relaxed shadow-2xs whitespace-pre-line",
+                  "p-4 rounded-2xl text-sm leading-relaxed shadow-2xs whitespace-pre-line relative",
                   msg.sender === "guest"
                     ? "bg-sky-700 text-white rounded-tr-none"
                     : "bg-white border border-slate-200 text-slate-900 rounded-tl-none"
                 )}
               >
                 {msg.text}
+
+                <div className="flex items-center justify-end gap-1 text-[10px] mt-1.5 opacity-70">
+                  <span>{msg.timestamp}</span>
+                  {msg.sender === "guest" && <CheckCheck className="w-3 h-3 text-sky-200" />}
+                </div>
               </div>
 
-              {/* Rich Media Cards Component */}
+              {/* Rich Hospitality Cards (Airbnb/Booking.com style) */}
               {msg.media && msg.media.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   {msg.media.map((item, index) => (
                     <div
                       key={index}
-                      className="p-3 bg-white border border-slate-200 rounded-2xl space-y-2 shadow-2xs"
+                      className="p-3.5 bg-white border border-slate-200 rounded-2xl space-y-2.5 shadow-2xs"
                     >
-                      {item.type === "image" && (
-                        <div className="space-y-1">
-                          <div className="w-full h-24 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
-                            <ImageIcon className="w-6 h-6 text-slate-400" />
+                      {item.type === "room" || item.type === "image" ? (
+                        <div className="space-y-2">
+                          <div className="w-full h-28 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 overflow-hidden relative">
+                            <ImageIcon className="w-8 h-8 text-slate-300" />
+                            <span className="absolute bottom-2 left-2 text-[10px] bg-slate-900/80 text-white px-2 py-0.5 rounded font-medium backdrop-blur-xs">
+                              Preview Card
+                            </span>
                           </div>
-                          <p className="text-xs font-medium text-slate-800">{item.title}</p>
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900">{item.title}</h4>
+                            {item.description && (
+                              <p className="text-[11px] text-slate-600 mt-0.5">{item.description}</p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleSend(`I'd like to ask about the ${item.title}`)}
+                            className="w-full py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 rounded-xl text-xs font-medium transition-all"
+                          >
+                            Ask About This Room
+                          </button>
                         </div>
-                      )}
+                      ) : null}
 
                       {item.type === "map" && (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-800">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
                             <MapPin className="w-4 h-4 text-sky-600" />
                             <span>{item.title}</span>
                           </div>
+                          {item.description && (
+                            <p className="text-[11px] text-slate-600">{item.description}</p>
+                          )}
                           <a
                             href={item.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3 py-1 rounded-lg transition-all"
+                            className="inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 w-full py-1.5 rounded-xl transition-all"
                           >
                             <span>View Directions</span>
                             <ExternalLink className="w-3 h-3" />
@@ -475,14 +495,14 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
                       )}
 
                       {item.type === "payment" && (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-800">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
                             <CreditCard className="w-4 h-4 text-emerald-600" />
                             <span>{item.title}</span>
                           </div>
                           <button
                             onClick={() => setShowPaymentModal(true)}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-lg transition-all"
+                            className="inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 w-full py-1.5 rounded-xl transition-all"
                           >
                             <span>Open Payment Preview</span>
                             <ExternalLink className="w-3 h-3" />
@@ -519,20 +539,37 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
           </div>
         ))}
 
+        {/* Realistic Anya is typing... Indicator */}
         {isTyping && (
           <div className="flex gap-3 mr-auto max-w-[80%]">
-            <div className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 text-sky-800 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 text-sky-800 flex items-center justify-center shrink-0">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1.5">
+            <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-2 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-sky-600 animate-bounce" style={{ animationDelay: "0ms" }} />
               <span className="w-2 h-2 rounded-full bg-sky-600 animate-bounce" style={{ animationDelay: "150ms" }} />
               <span className="w-2 h-2 rounded-full bg-sky-600 animate-bounce" style={{ animationDelay: "300ms" }} />
-              <span className="text-xs text-slate-500 ml-2">Anya is checking hotel knowledge base...</span>
+              <span className="text-xs text-slate-500 font-medium ml-1">Anya is typing...</span>
             </div>
           </div>
         )}
       </div>
+
+      {/* Dynamic Contextual Action Chips Bar */}
+      {latestChips.length > 0 && !isTyping && (
+        <div className="bg-slate-50 px-4 py-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto">
+          <span className="text-[11px] font-semibold text-slate-500 shrink-0">Quick Action:</span>
+          {latestChips.map((chip, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleSend(chip)}
+              className="text-xs px-3 py-1 rounded-full bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 transition-all shrink-0 font-medium shadow-2xs"
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Message Input Controls */}
       <div className="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2">
@@ -556,7 +593,7 @@ export default function DemoChat({ compact = false }: { compact?: boolean }) {
 
       {/* Footer Info */}
       <div className="bg-slate-50 px-4 py-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
-        <span>Fictional Hospitality Demo Business • Aura Boutique Hotel & Villa</span>
+        <span>Fictional Hospitality Demo Business • {PROPERTY_CONFIG.name}</span>
         <span>Enquiries Logged: <strong className="text-slate-900">{leadCount}</strong></span>
       </div>
     </div>

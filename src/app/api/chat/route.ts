@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { saveLeadToSupabase, LeadInsertPayload } from "@/lib/supabase";
+import { PROPERTY_CONFIG } from "@/lib/propertyConfig";
 
 interface ChatRequestPayload {
   message: string;
@@ -11,9 +12,10 @@ interface ChatRequestPayload {
 }
 
 export interface MediaItem {
-  type: "image" | "map" | "payment";
+  type: "image" | "map" | "payment" | "room" | "package";
   title: string;
   url: string;
+  description?: string | null;
 }
 
 export interface ExtractedLead {
@@ -34,83 +36,76 @@ export interface StructuredAgentResponse {
   staffAlerted: boolean;
   intent?: "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "handoff";
   language?: "en" | "si" | "singlish";
+  chips?: string[];
   media?: MediaItem[];
   lead?: ExtractedLead | null;
 }
 
 const SYSTEM_INSTRUCTION = `
-You are Anya, the warm, polite, professional, and helpful Digital Guest Receptionist & Sales Agent for "Aura Boutique Hotel & Villa", a fictional luxury boutique demo property in Sri Lanka.
+You are Anya, the warm, polite, professional, and helpful Digital Guest Receptionist & Sales Representative at "${PROPERTY_CONFIG.name}".
 
-AGENT IDENTITY & PERSONALITY:
+AGENT IDENTITY & HOSPITALITY VOICE:
 - Name: Anya
-- Role: Digital Guest Receptionist, Booking Assistant & Sales Representative.
-- Tone: Warm, hospitable, polite, concise, professional, friendly without sounding robotic. Never behave like a basic FAQ chatbot.
+- Role: Digital Guest Receptionist & Booking Assistant.
+- Tone: Warm, hospitable, polite, concise, natural. Never sound robotic or generic.
+- Use natural hospitality phrases: "We'd love to welcome you", "Thank you for your enquiry", "I'd be happy to help", "Let me check that for you", "We'd be delighted to host you."
+- Avoid generic phrases like "According to our information".
+
+WHATSAPP-STYLE FORMATTING:
+- Format replies cleanly with short scannable lines and emojis:
+  ✨ Includes
+  • Item 1
+  • Item 2
+  💰 Price details
+  📍 Location details
 
 LANGUAGE BEHAVIOUR (CRITICAL):
-- Detect the guest's language and reply in that EXACT same language:
-  1. English: Professional, warm reception tone.
-  2. Sinhala (සිංහල): Natural, polite Sri Lankan Sinhala hospitality language.
-  3. Singlish (Transliterated Sri Lankan English/Sinhala): Authentic, friendly Singlish (e.g. "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available. Per person LKR 3,500. 5 Junction idan approximately minutes 15k wage...").
-- Do NOT switch languages unless the guest switches first.
+- Detect the guest's language and reply in the EXACT same language:
+  1. English: Warm reception tone.
+  2. Sinhala (සිංහල): Natural Sri Lankan Sinhala hospitality language.
+  3. Singlish (Transliterated Sinhala/English): Authentic Singlish (e.g. "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available. Per person LKR 3,500. 5 Junction idan approximately minutes 15k wage...").
 
-HOTEL KNOWLEDGE BASE:
-- Property Name: Aura Boutique Hotel & Villa
-- Location: ~15 minutes from 5 Junction. Fictional Google Maps link: https://maps.google.com/?q=Aura+Boutique+Hotel+Villa
-- Room Types & Rates:
-  1. Deluxe Garden Room: LKR 32,000 / night (Breakfast included, max 2 adults)
-  2. Premium Ocean View Suite: LKR 48,000 / night (Breakfast included, max 2 adults + 1 child)
+PROPERTY KNOWLEDGE BASE:
+- Property Name: ${PROPERTY_CONFIG.name}
+- Location: ${PROPERTY_CONFIG.location}. Map link: ${PROPERTY_CONFIG.googleMapsUrl}
+- Room Categories:
+  1. Premium Ocean View Suite: LKR 48,000 / night (Breakfast included, max 2 adults + 1 child)
+  2. Deluxe Garden Room: LKR 32,000 / night (Breakfast included, max 2 adults)
   3. Private Villa with Pool: LKR 85,000 / night (Breakfast included, max 6 guests)
-- Dayout Package: LKR 3,500 / person (Welcome drink, lunch buffet, pool access, 9:00 AM to 5:00 PM)
-- Times: Check-in 3:00 PM | Check-out 11:00 AM | Breakfast 7:00 AM to 10:30 AM (Ocean Terrace)
-- Amenities: Infinity pool, complimentary Wi-Fi, free parking, restaurant, spa, airport transfers, ocean-view dining.
+- Dayout Package: LKR 3,500 per guest (Welcome drink, lunch buffet, pool access, changing room, 9:00 AM – 5:00 PM)
+- Times: Check-in ${PROPERTY_CONFIG.checkInTime} | Check-out ${PROPERTY_CONFIG.checkOutTime} | Breakfast ${PROPERTY_CONFIG.breakfastHours}
 
-SIMULATED AVAILABILITY & PAYMENT (IMPORTANT MANDATORY DIRECTIVES):
-- Real PMS integration does NOT exist. Every availability response MUST be clearly framed as simulated demo data.
-  Example: "For this demo, our sample availability shows two Deluxe Garden Rooms available..." or "In a live hotel setup, I would check your connected PMS before confirming availability."
-- Never claim a real room is available or confirmed.
-- Demo Payment Link: Use "https://wesvion.ai/demo-payment" clearly labeled as "Demo Payment Link". Never collect real financial/card data or falsely confirm payments.
+SIMULATED DEMO AVAILABILITY & PAYMENT:
+- Always frame availability answers as simulated demo data: "For this demo, our sample availability shows..."
+- Never claim a real booking is confirmed.
+- Payment link: "${PROPERTY_CONFIG.demoPaymentUrl}" clearly labeled "Demo Payment Link Preview".
 
-PHOTO / MEDIA REQUESTS:
-- When the guest requests room photos or location directions, include structured media objects in the "media" array:
-  - For Ocean View Suite / Room photos:
-    {"type": "image", "title": "Premium Ocean View Suite (Demo)", "url": "/images/ocean-view-suite.jpg"}
-  - For Deluxe Garden Room:
-    {"type": "image", "title": "Deluxe Garden Room (Demo)", "url": "/images/garden-room.jpg"}
-  - For Villa:
-    {"type": "image", "title": "Private Villa with Pool (Demo)", "url": "/images/private-villa.jpg"}
-  - For Location / Directions / Maps:
-    {"type": "map", "title": "Location Map (5 Junction - 15 mins)", "url": "https://maps.google.com/?q=Aura+Boutique+Hotel+Villa"}
-  - For Payment requests:
-    {"type": "payment", "title": "Demo Payment Link Preview", "url": "https://wesvion.ai/demo-payment"}
-
-SMART CONTEXTUAL UPSELLING:
-- Provide helpful, subtle upsells based on context (e.g. airport transfer, spa package, candlelight dinner for couples, extra bed for families). Do NOT pressure the guest.
-
-HUMAN HANDOFF RULES:
-- Trigger "staffAlerted": true and badge "Staff Handoff Triggered" when:
-  1. Guest requests special discounts, weddings, corporate events, large groups (>10 guests).
-  2. Guest files a complaint, refund request, custom arrangement, or asks to speak to a manager.
-  3. Question is outside knowledge base.
-- Reply politely: "I'll hand this over to our reservations manager so they can assist you personally."
-- Do NOT claim a real email or phone call was sent.
+QUICK ACTION CHIPS:
+- Provide 2-4 contextual action chip labels from this allowed list ONLY:
+  ["View Photos", "View Menu", "Check Demo Availability", "Start Booking", "Book This Room", "View Directions", "Airport Transfer", "Spa Packages", "Candlelight Dinner", "Speak to Staff"]
 
 LEAD CAPTURE RULES (STRICT):
-- Trigger "leadCaptured": true ONLY when meaningful contact or booking details are provided (e.g. Name + Email, Name + Phone, Stay Dates + Guest Count + Contact details).
-- Do NOT capture leads for general FAQs, room rates questions, breakfast questions, map requests, or photo requests.
+- Trigger "leadCaptured": true ONLY when meaningful contact or booking details are provided (e.g. Name + Email, Name + Phone, Stay Dates + Contact).
+- Do NOT capture leads for general FAQs, room rate questions, breakfast questions, map requests, or photo requests.
 
-REQUIRED OUTPUT JSON FORMAT:
+HUMAN HANDOFF:
+- Trigger "staffAlerted": true and badge "Staff Handoff Triggered" for wedding groups, discounts, complaints, corporate buyouts, or manager requests.
+
+REQUIRED OUTPUT JSON SCHEMA:
 {
-  "reply": "Conversational guest response text",
-  "badge": "Short 2-4 word label (e.g. 'Anya Receptionist', 'Property Knowledge', 'Lead Captured', 'Staff Handoff Triggered')",
+  "reply": "Conversational text response",
+  "badge": "Short 2-4 word label (e.g. 'Anya Receptionist', 'Property Knowledge', 'Demo Availability', 'Staff Handoff Triggered')",
   "leadCaptured": boolean,
   "staffAlerted": boolean,
   "intent": "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "handoff",
   "language": "en" | "si" | "singlish",
+  "chips": ["array of allowed chip strings"],
   "media": [
     {
-      "type": "image" | "map" | "payment",
+      "type": "image" | "map" | "payment" | "room" | "package",
       "title": "string",
-      "url": "string"
+      "url": "string",
+      "description": "string or null"
     }
   ],
   "lead": {
@@ -125,6 +120,13 @@ REQUIRED OUTPUT JSON FORMAT:
   }
 }
 `;
+
+function filterAllowedChips(chipsInput?: unknown): string[] {
+  if (!Array.isArray(chipsInput)) return ["Check Demo Availability", "View Photos", "Start Booking"];
+  return chipsInput.filter(
+    (chip: unknown): chip is string => typeof chip === "string" && PROPERTY_CONFIG.allowedChips.includes(chip.trim())
+  );
+}
 
 function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   const lower = userMessage.toLowerCase();
@@ -141,12 +143,13 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   ) {
     return {
       reply:
-        "I'll hand this over to our reservations manager so they can assist you personally with special group arrangements.",
+        "I'd be happy to arrange that! I will hand this over to our reservations manager so they can assist you personally with special group arrangements.",
       badge: "Staff Handoff Triggered",
       leadCaptured: false,
       staffAlerted: true,
       intent: "handoff",
       language: "en",
+      chips: ["Start Booking", "View Directions"],
       lead: null,
     };
   }
@@ -155,17 +158,19 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   if (lower.includes("dayout") || lower.includes("thiyenawada") || lower.includes("durada")) {
     return {
       reply:
-        "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available.\n\n👤 Per person LKR 3,500\n🍹 Welcome drink\n🍽 Lunch buffet\n🏊 Pool access\n🕘 9:00 AM – 5:00 PM\n\n📍 5 Junction idan approximately minutes 15k wage.\n\nOyata food menu eka balanna onada?",
+        "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available.\n\n✨ Includes\n• Welcome Drink\n• Lunch Buffet\n• Pool Access\n• Changing Room\n\n💰 LKR 3,500 per guest\n📍 Around 15 minutes from 5 Junction.\n\nOyata food menu eka balanna onada?",
       badge: "Dayout Package",
       leadCaptured: false,
       staffAlerted: false,
       intent: "faq",
       language: "singlish",
+      chips: ["View Menu", "View Photos", "Start Booking"],
       media: [
         {
           type: "map",
           title: "Location Map (5 Junction - 15 mins)",
-          url: "https://maps.google.com/?q=Aura+Boutique+Hotel+Villa",
+          url: PROPERTY_CONFIG.googleMapsUrl,
+          description: "Approx. 15 minutes from 5 Junction",
         },
       ],
       lead: null,
@@ -182,6 +187,7 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
       staffAlerted: false,
       intent: "faq",
       language: "si",
+      chips: ["Check Demo Availability", "View Photos", "Start Booking"],
       lead: null,
     };
   }
@@ -190,22 +196,25 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   if (lower.includes("photo") || lower.includes("image") || lower.includes("picture") || lower.includes("look")) {
     return {
       reply:
-        "Here are sample preview photos of our Premium Ocean View Suite and Deluxe Garden Room at Aura Boutique Hotel & Villa.",
+        "Here are sample preview cards of our Premium Ocean View Suite and Deluxe Garden Room at Aura Boutique Hotel & Villa.",
       badge: "Media Preview",
       leadCaptured: false,
       staffAlerted: false,
       intent: "media",
       language: "en",
+      chips: ["Book This Room", "Check Demo Availability", "Spa Packages"],
       media: [
         {
-          type: "image",
-          title: "Premium Ocean View Suite (Demo)",
+          type: "room",
+          title: "Premium Ocean View Suite",
           url: "/images/ocean-view-suite.jpg",
+          description: "LKR 48,000 / night • Panoramic Ocean Balcony",
         },
         {
-          type: "image",
-          title: "Deluxe Garden Room (Demo)",
+          type: "room",
+          title: "Deluxe Garden Room",
           url: "/images/garden-room.jpg",
+          description: "LKR 32,000 / night • Tropical Garden Sanctuary",
         },
       ],
       lead: null,
@@ -229,12 +238,13 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   if (email || (name && (checkIn || guestCount))) {
     return {
       reply:
-        `Thank you, ${name || "Guest"}! I have logged your reservation enquiry for Aura Boutique Hotel & Villa. Our reservations team will contact you at ${email || "your email"}.\n\nWould you like to add an airport transfer or candlelight dinner to your stay?`,
-      badge: "Lead Captured",
+        `Thank you, ${name || "Guest"}! We'd be delighted to host you. I have registered your reservation enquiry for Aura Boutique Hotel & Villa. Our reservations team will contact you at ${email || "your email"}.\n\nWould you like me to add an airport transfer or candlelight dinner to your enquiry?`,
+      badge: "Booking Logged",
       leadCaptured: true,
       staffAlerted: false,
       intent: "booking",
       language: "en",
+      chips: ["Airport Transfer", "Candlelight Dinner", "Spa Packages"],
       lead: {
         name,
         email,
@@ -251,24 +261,34 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   if (lower.includes("room") || lower.includes("price") || lower.includes("suite") || lower.includes("rate") || lower.includes("availab")) {
     return {
       reply:
-        "For this demonstration, our sample availability shows Deluxe Garden Rooms (LKR 32,000/night) and Premium Ocean View Suites (LKR 48,000/night) available. In a live setup, I would check your connected PMS before confirming.",
+        "For this demo, our sample availability shows Deluxe Garden Rooms (LKR 32,000/night) and Premium Ocean View Suites (LKR 48,000/night) available. In a live hotel setup, I would check your connected PMS before confirming.",
       badge: "Demo Availability",
       leadCaptured: false,
       staffAlerted: false,
       intent: "availability",
       language: "en",
+      chips: ["View Photos", "Start Booking", "Airport Transfer"],
+      media: [
+        {
+          type: "room",
+          title: "Premium Ocean View Suite",
+          url: "/images/ocean-view-suite.jpg",
+          description: "LKR 48,000 / night • King Bed & Ocean Balcony",
+        },
+      ],
       lead: null,
     };
   }
 
   return {
     reply:
-      "G'day! I am Anya, your Digital Guest Receptionist for Aura Boutique Hotel & Villa. How may I assist with your stay, room categories, or dayout enquiry today?",
+      "Ayubowan! 🌺 I'm Anya, your Digital Guest Receptionist for Aura Boutique Hotel & Villa. We'd love to welcome you! How may I assist with your room rates, dayout package, or stay dates today?",
     badge: "Anya Receptionist",
     leadCaptured: false,
     staffAlerted: false,
     intent: "faq",
     language: "en",
+    chips: ["Room Rates", "Dayout Package", "View Photos", "Start Booking"],
     lead: null,
   };
 }
@@ -293,9 +313,12 @@ function parseAndValidateGeminiResponse(rawText: string): StructuredAgentRespons
       mediaItems = parsed.media
         .filter((item: Record<string, unknown>) => item && typeof item.url === "string" && typeof item.title === "string")
         .map((item: Record<string, unknown>) => ({
-          type: item.type === "image" || item.type === "map" || item.type === "payment" ? (item.type as "image" | "map" | "payment") : "image",
+          type: (item.type === "image" || item.type === "map" || item.type === "payment" || item.type === "room" || item.type === "package"
+            ? item.type
+            : "image") as MediaItem["type"],
           title: item.title as string,
           url: item.url as string,
+          description: typeof item.description === "string" ? item.description : null,
         }));
     }
 
@@ -320,6 +343,7 @@ function parseAndValidateGeminiResponse(rawText: string): StructuredAgentRespons
       staffAlerted: Boolean(parsed.staffAlerted),
       intent: parsed.intent || "faq",
       language: parsed.language || "en",
+      chips: filterAllowedChips(parsed.chips),
       media: mediaItems,
       lead: leadData,
     };
@@ -407,7 +431,7 @@ export async function POST(req: NextRequest) {
 
       if (hasContactOrDates) {
         const payloadToInsert: LeadInsertPayload = {
-          property_name: "Aura Boutique Hotel & Villa",
+          property_name: PROPERTY_CONFIG.name,
           guest_name: extractedName,
           guest_email: extractedEmail,
           guest_phone: leadInfo?.phone || null,
@@ -432,6 +456,7 @@ export async function POST(req: NextRequest) {
       staffAlerted: agentResponse.staffAlerted,
       intent: agentResponse.intent || "faq",
       language: agentResponse.language || "en",
+      chips: agentResponse.chips || ["Check Demo Availability", "View Photos", "Start Booking"],
       media: agentResponse.media || [],
       latencyMs: Date.now() - startTime,
       source: responseSource,
@@ -446,6 +471,7 @@ export async function POST(req: NextRequest) {
       staffAlerted: false,
       intent: "faq",
       language: "en",
+      chips: ["Check Demo Availability", "View Photos", "Start Booking"],
       media: [],
       latencyMs: Date.now() - startTime,
       source: "fallback-critical-error",
