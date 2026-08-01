@@ -10,69 +10,109 @@ interface ChatRequestPayload {
   }>;
 }
 
-interface ExtractedLead {
+export interface MediaItem {
+  type: "image" | "map" | "payment";
+  title: string;
+  url: string;
+}
+
+export interface ExtractedLead {
   name?: string | null;
   email?: string | null;
   phone?: string | null;
   checkIn?: string | null;
   checkOut?: string | null;
   guestCount?: number | null;
+  roomPreference?: string | null;
   message?: string;
 }
 
-interface StructuredAgentResponse {
+export interface StructuredAgentResponse {
   reply: string;
   badge: string;
   leadCaptured: boolean;
   staffAlerted: boolean;
+  intent?: "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "handoff";
+  language?: "en" | "si" | "singlish";
+  media?: MediaItem[];
   lead?: ExtractedLead | null;
 }
 
 const SYSTEM_INSTRUCTION = `
-You are the AI Guest Receptionist for "Aura Boutique Hotel & Villa", a fictional luxury boutique hospitality demonstration property.
+You are Anya, the warm, polite, professional, and helpful Digital Guest Receptionist & Sales Agent for "Aura Boutique Hotel & Villa", a fictional luxury boutique demo property in Sri Lanka.
 
-PROPERTY KNOWLEDGE BASE:
-- Property Name: Aura Boutique Hotel & Villa (Fictional Demo Business)
-- Room Categories & Rates:
-  1. Deluxe Garden Room: $280 per night
-  2. Premium Ocean View Suite: $420 per night
-  3. Private Villa with Pool: $750 per night
-- Check-in Time: 3:00 PM
-- Check-out Time: 11:00 AM
-- Late Check-out: Available upon request and subject to availability.
-- Breakfast: Included for all guests daily. Served at Ocean Terrace Restaurant from 7:00 AM – 10:30 AM.
-- Property Amenities:
-  - 24/7 Infinity Pool
-  - Serenity Spa
-  - Complimentary High-Speed Wi-Fi
-  - Private Airport Transfers upon request
+AGENT IDENTITY & PERSONALITY:
+- Name: Anya
+- Role: Digital Guest Receptionist, Booking Assistant & Sales Representative.
+- Tone: Warm, hospitable, polite, concise, professional, friendly without sounding robotic. Never behave like a basic FAQ chatbot.
 
-YOUR ROLE & BEHAVIOR:
-- Answer guest FAQs, explain room categories, pricing, amenities, check-in/out policies, and breakfast details accurately.
-- Handle booking enquiries professionally and collect guest details (e.g. name, stay dates, guest count, contact email, phone) when appropriate.
-- Never invent unverified information or policies outside this knowledge base.
-- Never claim real-time PMS inventory availability; instead offer to log an enquiry for reservations.
-- Maintain a warm, friendly, concise, and professional hospitality tone suitable for Australian, UK, and international luxury travel guests.
+LANGUAGE BEHAVIOUR (CRITICAL):
+- Detect the guest's language and reply in that EXACT same language:
+  1. English: Professional, warm reception tone.
+  2. Sinhala (සිංහල): Natural, polite Sri Lankan Sinhala hospitality language.
+  3. Singlish (Transliterated Sri Lankan English/Sinhala): Authentic, friendly Singlish (e.g. "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available. Per person LKR 3,500. 5 Junction idan approximately minutes 15k wage...").
+- Do NOT switch languages unless the guest switches first.
 
-HUMAN HANDOFF & ALERTS:
-- Trigger "staffAlerted": true when:
-  1. The guest asks to speak to a human, staff member, manager, or owner.
-  2. The guest inquires about a group booking or event with MORE THAN 10 guests.
-  3. The guest inquires about a custom wedding or private venue buyout.
-  4. The guest requests something outside available property knowledge or requires special staff escalation.
+HOTEL KNOWLEDGE BASE:
+- Property Name: Aura Boutique Hotel & Villa
+- Location: ~15 minutes from 5 Junction. Fictional Google Maps link: https://maps.google.com/?q=Aura+Boutique+Hotel+Villa
+- Room Types & Rates:
+  1. Deluxe Garden Room: LKR 32,000 / night (Breakfast included, max 2 adults)
+  2. Premium Ocean View Suite: LKR 48,000 / night (Breakfast included, max 2 adults + 1 child)
+  3. Private Villa with Pool: LKR 85,000 / night (Breakfast included, max 6 guests)
+- Dayout Package: LKR 3,500 / person (Welcome drink, lunch buffet, pool access, 9:00 AM to 5:00 PM)
+- Times: Check-in 3:00 PM | Check-out 11:00 AM | Breakfast 7:00 AM to 10:30 AM (Ocean Terrace)
+- Amenities: Infinity pool, complimentary Wi-Fi, free parking, restaurant, spa, airport transfers, ocean-view dining.
 
-LEAD CAPTURE & EXTRACTION RULES:
-- Trigger "leadCaptured": true ONLY when meaningful contact or booking information is available (e.g. guest provides their name, email, phone number, stay dates, or makes an explicit reservation request).
-- Do NOT trigger leadCaptured for simple FAQ questions like "What time is breakfast?" or "How much is the suite?".
-- When leadCaptured is true, populate the optional "lead" object with any extracted details (name, email, phone, checkIn format YYYY-MM-DD or null, checkOut format YYYY-MM-DD or null, guestCount or null, and a brief message summary).
+SIMULATED AVAILABILITY & PAYMENT (IMPORTANT MANDATORY DIRECTIVES):
+- Real PMS integration does NOT exist. Every availability response MUST be clearly framed as simulated demo data.
+  Example: "For this demo, our sample availability shows two Deluxe Garden Rooms available..." or "In a live hotel setup, I would check your connected PMS before confirming availability."
+- Never claim a real room is available or confirmed.
+- Demo Payment Link: Use "https://wesvion.ai/demo-payment" clearly labeled as "Demo Payment Link". Never collect real financial/card data or falsely confirm payments.
 
-REQUIRED OUTPUT FORMAT:
-You MUST return ONLY a raw valid JSON object with NO markdown wrapper, matching this JSON schema exactly:
+PHOTO / MEDIA REQUESTS:
+- When the guest requests room photos or location directions, include structured media objects in the "media" array:
+  - For Ocean View Suite / Room photos:
+    {"type": "image", "title": "Premium Ocean View Suite (Demo)", "url": "/images/ocean-view-suite.jpg"}
+  - For Deluxe Garden Room:
+    {"type": "image", "title": "Deluxe Garden Room (Demo)", "url": "/images/garden-room.jpg"}
+  - For Villa:
+    {"type": "image", "title": "Private Villa with Pool (Demo)", "url": "/images/private-villa.jpg"}
+  - For Location / Directions / Maps:
+    {"type": "map", "title": "Location Map (5 Junction - 15 mins)", "url": "https://maps.google.com/?q=Aura+Boutique+Hotel+Villa"}
+  - For Payment requests:
+    {"type": "payment", "title": "Demo Payment Link Preview", "url": "https://wesvion.ai/demo-payment"}
+
+SMART CONTEXTUAL UPSELLING:
+- Provide helpful, subtle upsells based on context (e.g. airport transfer, spa package, candlelight dinner for couples, extra bed for families). Do NOT pressure the guest.
+
+HUMAN HANDOFF RULES:
+- Trigger "staffAlerted": true and badge "Staff Handoff Triggered" when:
+  1. Guest requests special discounts, weddings, corporate events, large groups (>10 guests).
+  2. Guest files a complaint, refund request, custom arrangement, or asks to speak to a manager.
+  3. Question is outside knowledge base.
+- Reply politely: "I'll hand this over to our reservations manager so they can assist you personally."
+- Do NOT claim a real email or phone call was sent.
+
+LEAD CAPTURE RULES (STRICT):
+- Trigger "leadCaptured": true ONLY when meaningful contact or booking details are provided (e.g. Name + Email, Name + Phone, Stay Dates + Guest Count + Contact details).
+- Do NOT capture leads for general FAQs, room rates questions, breakfast questions, map requests, or photo requests.
+
+REQUIRED OUTPUT JSON FORMAT:
 {
-  "reply": "Conversational guest-facing text response",
-  "badge": "Short 2-4 word action label (e.g. 'Property Knowledge', 'Booking Enquiry', 'Lead Captured', 'Human Handoff')",
+  "reply": "Conversational guest response text",
+  "badge": "Short 2-4 word label (e.g. 'Anya Receptionist', 'Property Knowledge', 'Lead Captured', 'Staff Handoff Triggered')",
   "leadCaptured": boolean,
   "staffAlerted": boolean,
+  "intent": "faq" | "availability" | "booking" | "payment" | "media" | "upsell" | "handoff",
+  "language": "en" | "si" | "singlish",
+  "media": [
+    {
+      "type": "image" | "map" | "payment",
+      "title": "string",
+      "url": "string"
+    }
+  ],
   "lead": {
     "name": "string or null",
     "email": "string or null",
@@ -80,7 +120,8 @@ You MUST return ONLY a raw valid JSON object with NO markdown wrapper, matching 
     "checkIn": "YYYY-MM-DD or null",
     "checkOut": "YYYY-MM-DD or null",
     "guestCount": number or null,
-    "message": "string summary"
+    "roomPreference": "string or null",
+    "message": "summary string"
   }
 }
 `;
@@ -88,50 +129,112 @@ You MUST return ONLY a raw valid JSON object with NO markdown wrapper, matching 
 function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
   const lower = userMessage.toLowerCase();
 
+  // Handoff Check
   if (
     lower.includes("human") ||
     lower.includes("staff") ||
     lower.includes("manager") ||
-    lower.includes("speak") ||
     lower.includes("wedding") ||
-    lower.includes("event")
+    lower.includes("discount") ||
+    lower.includes("event") ||
+    lower.includes("complaint")
   ) {
     return {
       reply:
-        "I have flagged this request for high-priority human staff handoff. Our Guest Experience Director has received an email notification and will get in touch with you directly.",
-      badge: "Human Handoff",
+        "I'll hand this over to our reservations manager so they can assist you personally with special group arrangements.",
+      badge: "Staff Handoff Triggered",
       leadCaptured: false,
       staffAlerted: true,
+      intent: "handoff",
+      language: "en",
       lead: null,
     };
   }
 
-  const isEmail = lower.includes("@") || lower.includes("email");
-  const isBooking = lower.includes("book") || lower.includes("stay") || lower.includes("reserve");
-
-  if (isEmail || (isBooking && (lower.includes("august") || lower.includes("night") || lower.includes("guest")))) {
-    const emailMatch = userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const email = emailMatch ? emailMatch[0] : null;
-
-    // Extract name if "my name is X" format
-    const nameMatch = userMessage.match(/(?:my name is|i'm|im)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i);
-    const name = nameMatch ? nameMatch[1] : null;
-
-    // Extract dates if YYYY-MM-DD or Month Day format
-    const datesMatch = userMessage.match(/(?:august|aug)\s+(\d{1,2})\s+to\s+(?:august|aug)\s+(\d{1,2})/i);
-    const checkIn = datesMatch ? `2026-08-${datesMatch[1].padStart(2, "0")}` : null;
-    const checkOut = datesMatch ? `2026-08-${datesMatch[2].padStart(2, "0")}` : null;
-
-    // Extract guest count
-    const guestMatch = userMessage.match(/(\d+)\s+guest/i);
-    const guestCount = guestMatch ? parseInt(guestMatch[1], 10) : null;
-
+  // Singlish Dayout scenario check
+  if (lower.includes("dayout") || lower.includes("thiyenawada") || lower.includes("durada")) {
     return {
       reply:
-        "Thank you! I have recorded your booking enquiry for Aura Boutique Hotel & Villa. Our reservations team will process your stay details and send confirmation to your email.",
+        "Hi! 👋 Ow, laba Saturday ape Dayout Package eka demo availability anuwa available.\n\n👤 Per person LKR 3,500\n🍹 Welcome drink\n🍽 Lunch buffet\n🏊 Pool access\n🕘 9:00 AM – 5:00 PM\n\n📍 5 Junction idan approximately minutes 15k wage.\n\nOyata food menu eka balanna onada?",
+      badge: "Dayout Package",
+      leadCaptured: false,
+      staffAlerted: false,
+      intent: "faq",
+      language: "singlish",
+      media: [
+        {
+          type: "map",
+          title: "Location Map (5 Junction - 15 mins)",
+          url: "https://maps.google.com/?q=Aura+Boutique+Hotel+Villa",
+        },
+      ],
+      lead: null,
+    };
+  }
+
+  // Sinhala Dayout or Room FAQ check
+  if (lower.includes("ලබන") || lower.includes("සෙනසුරාදා") || lower.includes("පැකේජ්") || lower.includes("කාමර")) {
+    return {
+      reply:
+        "ආයුබෝවන්! 🌺 ඔව්, Aura Boutique Hotel & Villa හි Dayout Package එක (පුද්ගලයෙකුට LKR 3,500) සහ කාමර පවතිනවා. (Demo availability)\n\nවැඩිදුර විස්තර හෝ Booking Enquiry එකක් තැබීමට අවශ්‍යද?",
+      badge: "Property Knowledge",
+      leadCaptured: false,
+      staffAlerted: false,
+      intent: "faq",
+      language: "si",
+      lead: null,
+    };
+  }
+
+  // Photo / Media Request
+  if (lower.includes("photo") || lower.includes("image") || lower.includes("picture") || lower.includes("look")) {
+    return {
+      reply:
+        "Here are sample preview photos of our Premium Ocean View Suite and Deluxe Garden Room at Aura Boutique Hotel & Villa.",
+      badge: "Media Preview",
+      leadCaptured: false,
+      staffAlerted: false,
+      intent: "media",
+      language: "en",
+      media: [
+        {
+          type: "image",
+          title: "Premium Ocean View Suite (Demo)",
+          url: "/images/ocean-view-suite.jpg",
+        },
+        {
+          type: "image",
+          title: "Deluxe Garden Room (Demo)",
+          url: "/images/garden-room.jpg",
+        },
+      ],
+      lead: null,
+    };
+  }
+
+  // Meaningful Lead Capture Check
+  const emailMatch = userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  const email = emailMatch ? emailMatch[0] : null;
+
+  const nameMatch = userMessage.match(/(?:my name is|i'm|im|name:?)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i);
+  const name = nameMatch ? nameMatch[1] : null;
+
+  const datesMatch = userMessage.match(/(?:august|aug)\s+(\d{1,2})\s+to\s+(?:august|aug)\s+(\d{1,2})/i);
+  const checkIn = datesMatch ? `2026-08-${datesMatch[1].padStart(2, "0")}` : null;
+  const checkOut = datesMatch ? `2026-08-${datesMatch[2].padStart(2, "0")}` : null;
+
+  const guestMatch = userMessage.match(/(\d+)\s+guest/i);
+  const guestCount = guestMatch ? parseInt(guestMatch[1], 10) : null;
+
+  if (email || (name && (checkIn || guestCount))) {
+    return {
+      reply:
+        `Thank you, ${name || "Guest"}! I have logged your reservation enquiry for Aura Boutique Hotel & Villa. Our reservations team will contact you at ${email || "your email"}.\n\nWould you like to add an airport transfer or candlelight dinner to your stay?`,
       badge: "Lead Captured",
       leadCaptured: true,
       staffAlerted: false,
+      intent: "booking",
+      language: "en",
       lead: {
         name,
         email,
@@ -144,49 +247,28 @@ function runFallbackSimulation(userMessage: string): StructuredAgentResponse {
     };
   }
 
-  if (
-    lower.includes("room") ||
-    lower.includes("price") ||
-    lower.includes("suite") ||
-    lower.includes("villa") ||
-    lower.includes("rate")
-  ) {
+  // Room Rate / Availability FAQ
+  if (lower.includes("room") || lower.includes("price") || lower.includes("suite") || lower.includes("rate") || lower.includes("availab")) {
     return {
       reply:
-        "At Aura Boutique Hotel & Villa, we offer Deluxe Garden Rooms ($280/night), Premium Ocean View Suites ($420/night), and Private Villas with Pool ($750/night). May I note your check-in dates and contact email to log a booking enquiry for you?",
-      badge: "Booking Enquiry",
+        "For this demonstration, our sample availability shows Deluxe Garden Rooms (LKR 32,000/night) and Premium Ocean View Suites (LKR 48,000/night) available. In a live setup, I would check your connected PMS before confirming.",
+      badge: "Demo Availability",
       leadCaptured: false,
       staffAlerted: false,
-      lead: null,
-    };
-  }
-
-  if (
-    lower.includes("check-in") ||
-    lower.includes("checkout") ||
-    lower.includes("breakfast") ||
-    lower.includes("pool") ||
-    lower.includes("spa") ||
-    lower.includes("wifi") ||
-    lower.includes("transfer") ||
-    lower.includes("faq")
-  ) {
-    return {
-      reply:
-        "Check-in at Aura Boutique Hotel & Villa is from 3:00 PM, and check-out is by 11:00 AM. Gourmet breakfast is included daily at our Ocean Terrace Restaurant from 7:00 AM – 10:30 AM. Guests also enjoy 24/7 access to our Infinity Pool and Serenity Spa.",
-      badge: "Property Knowledge",
-      leadCaptured: false,
-      staffAlerted: false,
+      intent: "availability",
+      language: "en",
       lead: null,
     };
   }
 
   return {
     reply:
-      "G'day! Welcome to Aura Boutique Hotel & Villa. I can answer questions regarding our luxury suites, breakfast hours, property amenities, and booking enquiries. How may I assist your stay today?",
-    badge: "Property Knowledge",
+      "G'day! I am Anya, your Digital Guest Receptionist for Aura Boutique Hotel & Villa. How may I assist with your stay, room categories, or dayout enquiry today?",
+    badge: "Anya Receptionist",
     leadCaptured: false,
     staffAlerted: false,
+    intent: "faq",
+    language: "en",
     lead: null,
   };
 }
@@ -206,6 +288,17 @@ function parseAndValidateGeminiResponse(rawText: string): StructuredAgentRespons
       return null;
     }
 
+    let mediaItems: MediaItem[] | undefined = undefined;
+    if (Array.isArray(parsed.media)) {
+      mediaItems = parsed.media
+        .filter((item: Record<string, unknown>) => item && typeof item.url === "string" && typeof item.title === "string")
+        .map((item: Record<string, unknown>) => ({
+          type: item.type === "image" || item.type === "map" || item.type === "payment" ? (item.type as "image" | "map" | "payment") : "image",
+          title: item.title as string,
+          url: item.url as string,
+        }));
+    }
+
     let leadData: ExtractedLead | null = null;
     if (parsed.lead && typeof parsed.lead === "object") {
       leadData = {
@@ -215,15 +308,19 @@ function parseAndValidateGeminiResponse(rawText: string): StructuredAgentRespons
         checkIn: typeof parsed.lead.checkIn === "string" ? parsed.lead.checkIn : null,
         checkOut: typeof parsed.lead.checkOut === "string" ? parsed.lead.checkOut : null,
         guestCount: typeof parsed.lead.guestCount === "number" ? parsed.lead.guestCount : null,
+        roomPreference: typeof parsed.lead.roomPreference === "string" ? parsed.lead.roomPreference : null,
         message: typeof parsed.lead.message === "string" ? parsed.lead.message : "",
       };
     }
 
     return {
       reply: parsed.reply.trim(),
-      badge: typeof parsed.badge === "string" && parsed.badge.trim() ? parsed.badge.trim() : "Property Knowledge",
+      badge: typeof parsed.badge === "string" && parsed.badge.trim() ? parsed.badge.trim() : "Anya Receptionist",
       leadCaptured: Boolean(parsed.leadCaptured),
       staffAlerted: Boolean(parsed.staffAlerted),
+      intent: parsed.intent || "faq",
+      language: parsed.language || "en",
+      media: mediaItems,
       lead: leadData,
     };
   } catch {
@@ -295,7 +392,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Lead Saving Logic with Supabase Execution
+    // Strict Lead Saving Logic with Supabase Execution
     let leadSaved = false;
 
     if (agentResponse.leadCaptured && !agentResponse.staffAlerted) {
@@ -303,12 +400,12 @@ export async function POST(req: NextRequest) {
       const extractedEmail =
         leadInfo?.email || userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0] || null;
       const extractedName =
-        leadInfo?.name || userMessage.match(/(?:my name is|i'm|im)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i)?.[1] || null;
+        leadInfo?.name || userMessage.match(/(?:my name is|i'm|im|name:?)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i)?.[1] || null;
 
       const hasContactOrDates =
-        Boolean(extractedEmail) || Boolean(leadInfo?.phone) || Boolean(extractedName) || Boolean(leadInfo?.checkIn);
+        Boolean(extractedEmail) || Boolean(leadInfo?.phone) || Boolean(extractedName && leadInfo?.checkIn);
 
-      if (hasContactOrDates || userMessage.toLowerCase().includes("book") || userMessage.toLowerCase().includes("@")) {
+      if (hasContactOrDates) {
         const payloadToInsert: LeadInsertPayload = {
           property_name: "Aura Boutique Hotel & Villa",
           guest_name: extractedName,
@@ -318,7 +415,7 @@ export async function POST(req: NextRequest) {
           check_out: leadInfo?.checkOut || null,
           guest_count: leadInfo?.guestCount || null,
           message: leadInfo?.message || userMessage,
-          source: "AI Guest Agent",
+          source: "AI Guest Agent (Anya)",
           status: "new",
         };
 
@@ -333,6 +430,9 @@ export async function POST(req: NextRequest) {
       leadCaptured: agentResponse.leadCaptured,
       leadSaved,
       staffAlerted: agentResponse.staffAlerted,
+      intent: agentResponse.intent || "faq",
+      language: agentResponse.language || "en",
+      media: agentResponse.media || [],
       latencyMs: Date.now() - startTime,
       source: responseSource,
     });
@@ -344,6 +444,9 @@ export async function POST(req: NextRequest) {
       leadCaptured: false,
       leadSaved: false,
       staffAlerted: false,
+      intent: "faq",
+      language: "en",
+      media: [],
       latencyMs: Date.now() - startTime,
       source: "fallback-critical-error",
     });

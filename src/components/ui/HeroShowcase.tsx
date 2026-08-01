@@ -45,12 +45,12 @@ export default function HeroShowcase() {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h4 className="text-xs font-semibold text-slate-900">Aura Boutique Hotel & Villa</h4>
+                <h4 className="text-xs font-semibold text-slate-900">Anya — AI Guest Receptionist</h4>
                 <Check className="w-3 h-3 text-sky-600" />
               </div>
               <p className="text-[10px] text-slate-500 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                AI Guest Agent • 24/7 Reception
+                Aura Boutique Hotel & Villa • 24/7 Receptionist
               </p>
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function HeroShowcase() {
               <User className="w-3.5 h-3.5" />
             </div>
             <div className="bg-sky-700 text-white p-3 rounded-2xl rounded-tr-none shadow-2xs leading-relaxed">
-              G&apos;day! Do you have an Ocean View Suite available for Aug 15-18 for 2 guests? My email is sarah@example.com.
+              Hi, next Saturday dayout packages thiyenawada? 5 Junction idan kochchara durada?
             </div>
           </div>
 
@@ -78,10 +78,10 @@ export default function HeroShowcase() {
             </div>
             <div className="bg-white border border-slate-200 text-slate-900 p-3 rounded-2xl rounded-tl-none shadow-2xs leading-relaxed space-y-1.5">
               <p>
-                Welcome, Sarah! Yes, our <strong>Premium Ocean View Suite ($420/night)</strong> is available for August 15–18. Gourmet breakfast is included daily.
+                Hi! 👋 Ow, laba Saturday ape Dayout Package eka (LKR 3,500/person) demo availability anuwa available. 5 Junction idan approximately 15 minutes.
               </p>
               <p className="text-[11px] text-sky-800 font-medium pt-0.5">
-                I have logged your booking enquiry details for our reservations team!
+                Oyata food menu eka balanna onada?
               </p>
             </div>
           </div>
@@ -91,7 +91,7 @@ export default function HeroShowcase() {
         <div className="bg-white px-4 py-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
           <span>Demo Property: Aura Boutique Hotel</span>
           <span className="text-emerald-700 font-medium flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Intent Logged
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Multilingual AI Active
           </span>
         </div>
       </motion.div>
