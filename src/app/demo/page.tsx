@@ -46,9 +46,18 @@ export default function DemoPage() {
             Simulate guest interactions across website chat and simulated messaging channels, powered by property knowledge and automated lead capture.
           </p>
 
-          <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 text-xs text-slate-700 shadow-2xs">
-            <Building2 className="w-4 h-4 text-sky-700" />
-            <span>Demonstration Property: <strong>Aura Boutique Hotel & Villa</strong> (Fictional Hospitality Demo)</span>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 text-xs text-slate-700 shadow-2xs">
+              <Building2 className="w-4 h-4 text-sky-700" />
+              <span>Demonstration Property: <strong>Aura Boutique Hotel & Villa</strong> (Fictional Hospitality Demo)</span>
+            </div>
+            <a
+              href="/demo-v2"
+              className="inline-flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-full border border-amber-300 text-xs text-amber-900 font-medium transition shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Try Clean Knowledge Demo (/demo-v2) &rarr;</span>
+            </a>
           </div>
         </div>
       </section>
