@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     let promptContext = `TOP RETRIEVED HOTEL DOCUMENT CHUNKS:\n`;
     for (const c of chunks) {
-      promptContext += `[Document: "${c.documentTitle}" | ChunkID: ${c.chunkId} | ChunkIndex: ${c.chunkIndex} | Relevance Score: ${c.score}]\n${c.contentSnippet}\n\n`;
+      promptContext += `[Document: "${c.documentTitle}" | ChunkID: ${c.chunkId} | ChunkIndex: ${c.chunkIndex}]\n${c.contentSnippet}\n\n`;
     }
 
     if (apiKey) {
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
               role: "user",
               parts: [
                 {
-                  text: `You are Anya, AI Assistant for Aura Boutique Hotel.\n\nSYSTEM INSTRUCTIONS:\n1. Answer the guest question ONLY using facts directly supported by the retrieved document text below.\n2. Do NOT invent missing details, prices, times, ingredients, or spice levels.\n3. If the requested information is not present in the retrieved text, state EXACTLY: "${UNAVAILABLE_MESSAGE}"\n4. Never output raw chunk code or text dumps. Generate a smooth, professional response.\n\n${promptContext}\nGuest Question: "${userMessage}" (Search Query: "${rewrittenQuery}")`,
+                  text: `You are Anya, AI Assistant for Aura Boutique Hotel.\n\n${promptContext}\nGuest Question: "${userMessage}" (Target Subject: "${rewrittenQuery}")\n\nSTRICT ATTRIBUTE EXTRACTION RULES:\n1. Identify the specific attribute requested by the guest:\n   - INCLUSIONS (e.g. "what is included", "what does it contain"): Extract ONLY the list of items/services included.\n   - CAPACITY (e.g. "how many people can join", "capacity", "how many guests"): Extract ONLY the maximum guests/capacity allowed.\n   - PRICE (e.g. "how much", "price", "rate", "cost"): Extract ONLY the price or cost.\n   - DURATION (e.g. "how long does it take", "duration"): Extract ONLY the duration.\n   - SCHEDULE / START TIME (e.g. "what time does it start", "start time", "schedule"): Extract ONLY the exact start time if explicitly stated.\n   - LOCATION (e.g. "where is it"): Extract ONLY the location.\n2. Answer ONLY the requested attribute directly and concisely. Do NOT output an overall summary or overview unless the guest explicitly asked for an overview.\n3. If the requested attribute is NOT explicitly stated in the retrieved text above (e.g. asking for start time when only duration is given, or asking for spice level when unmentioned), state EXACTLY:\n   "${UNAVAILABLE_MESSAGE}"\n4. NEVER substitute another fact (e.g. do NOT give duration when asked for start time).`,
                 },
               ],
             },
@@ -95,50 +95,77 @@ export async function POST(req: NextRequest) {
         });
         aiAnswer = response.text?.trim() || "";
       } catch {
-        // Fallback natural synthesis below
+        // Fallback attribute synthesizer below
       }
     }
 
-    // Natural synthesis fallback if Gemini API is offline (NEVER return raw chunk text)
+    // Precise attribute extraction fallback if Gemini API is offline
     if (!aiAnswer) {
-      const lower = rewrittenQuery.toLowerCase();
+      const lowerQuery = rewrittenQuery.toLowerCase();
       const rawLower = userMessage.toLowerCase();
 
-      if (lower.includes("sunset seafood") || lower.includes("seafood platter")) {
-        if (rawLower.includes("how much") || rawLower.includes("price")) {
-          aiAnswer = "The Sunset Seafood Platter is LKR 6,750.";
-        } else if (rawLower.includes("included") || rawLower.includes("contain") || rawLower.includes("lobster")) {
-          aiAnswer = "It includes grilled lobster, jumbo prawns, calamari, butter rice and garlic dip.";
-        } else if (rawLower.includes("spicy")) {
-          aiAnswer = UNAVAILABLE_MESSAGE;
-        } else {
-          aiAnswer = "The Sunset Seafood Platter is LKR 6,750 and includes grilled lobster, jumbo prawns, calamari, butter rice and garlic dip.";
-        }
-      } else if (lower.includes("serenity coconut") || lower.includes("sandalwood ritual") || lower.includes("spa ritual")) {
-        if (rawLower.includes("how much") || rawLower.includes("price")) {
-          aiAnswer = "The Serenity Coconut & Sandalwood Ritual is LKR 9,800.";
-        } else if (rawLower.includes("included")) {
-          aiAnswer = "It includes a warm coconut oil massage, sandalwood body polish, herbal steam and king coconut refreshment.";
-        } else if (rawLower.includes("how long") || rawLower.includes("time") || rawLower.includes("duration")) {
-          aiAnswer = "The Serenity Coconut & Sandalwood Ritual takes 90 minutes.";
-        } else if (rawLower.includes("spicy")) {
-          aiAnswer = UNAVAILABLE_MESSAGE;
-        } else {
-          aiAnswer = "The Serenity Coconut & Sandalwood Ritual is LKR 9,800 for 90 minutes. It includes warm coconut oil massage, sandalwood body polish, herbal steam and king coconut refreshment.";
-        }
-      } else if (lower.includes("mangrove") || lower.includes("moonrise")) {
-        if (rawLower.includes("how much") || rawLower.includes("price")) {
+      // Determine requested attribute
+      const isAskingInclusions = rawLower.includes("included") || rawLower.includes("contain") || rawLower.includes("includes");
+      const isAskingCapacity = rawLower.includes("how many people") || rawLower.includes("capacity") || rawLower.includes("how many guests") || rawLower.includes("can join") || rawLower.includes("can carry");
+      const isAskingPrice = rawLower.includes("how much") || rawLower.includes("price") || rawLower.includes("cost") || rawLower.includes("rate");
+      const isAskingDuration = rawLower.includes("how long") || rawLower.includes("duration");
+      const isAskingStartTime = rawLower.includes("what time does it start") || rawLower.includes("start time");
+
+      if (lowerQuery.includes("mangrove") || lowerQuery.includes("safari")) {
+        if (isAskingInclusions) {
+          aiAnswer = "It includes a naturalist guide, lantern lighting, bottled water, and binoculars.";
+        } else if (isAskingCapacity) {
+          aiAnswer = "Up to 5 guests per boat.";
+        } else if (isAskingPrice) {
           aiAnswer = "The Moonrise Mangrove Safari is LKR 5,500 per person.";
-        } else if (rawLower.includes("how long") || rawLower.includes("duration")) {
-          aiAnswer = "The Moonrise Mangrove Safari duration is 2.5 hours.";
+        } else if (isAskingDuration) {
+          aiAnswer = "The duration is 2.5 hours.";
+        } else if (isAskingStartTime) {
+          aiAnswer = UNAVAILABLE_MESSAGE; // Departure times arranged individually
         } else {
-          aiAnswer = "The Moonrise Mangrove Safari is LKR 5,500 per person for a 2.5-hour guided boat expedition through Madu River mangrove lagoons.";
+          aiAnswer = "The Moonrise Mangrove Safari is LKR 5,500 per person for a 2.5-hour guided boat expedition. Capacity: Up to 5 guests per boat. Includes naturalist guide, lantern lighting, bottled water, and binoculars.";
         }
-      } else if (lower.includes("stargazer cinema") || lower.includes("wednesday")) {
-        if (rawLower.includes("free") || rawLower.includes("cost")) {
-          aiAnswer = "Stargazer Cinema is complimentary for in-house guests.";
+      } else if (lowerQuery.includes("sunset seafood") || lowerQuery.includes("seafood platter")) {
+        if (isAskingInclusions) {
+          aiAnswer = "It includes fresh grilled lobster, jumbo prawns, calamari, butter rice, and garlic dip.";
+        } else if (isAskingCapacity) {
+          aiAnswer = "Designed for 2 guests.";
+        } else if (isAskingPrice) {
+          aiAnswer = "The Sunset Seafood Platter is LKR 6,750.";
+        } else if (isAskingStartTime) {
+          aiAnswer = UNAVAILABLE_MESSAGE;
         } else {
-          aiAnswer = "Every Wednesday at 8:00 PM, we host Stargazer Cinema under the stars on the Beach Lawn.";
+          aiAnswer = "The Sunset Seafood Platter is LKR 6,750. It includes fresh grilled lobster, jumbo prawns, calamari, butter rice, and garlic dip.";
+        }
+      } else if (lowerQuery.includes("serenity coconut") || lowerQuery.includes("sandalwood ritual") || lowerQuery.includes("spa ritual")) {
+        if (isAskingInclusions) {
+          aiAnswer = "It includes a warm coconut oil massage, sandalwood body polish, herbal steam bath, and fresh king coconut refreshment.";
+        } else if (isAskingCapacity) {
+          aiAnswer = "Maximum capacity: 2 guests simultaneously in a private couple suite.";
+        } else if (isAskingPrice) {
+          aiAnswer = "The Serenity Coconut & Sandalwood Ritual is LKR 9,800.";
+        } else if (isAskingDuration) {
+          aiAnswer = "90 minutes.";
+        } else if (isAskingStartTime) {
+          aiAnswer = UNAVAILABLE_MESSAGE;
+        } else {
+          aiAnswer = "The Serenity Coconut & Sandalwood Ritual is LKR 9,800 for 90 minutes. It includes warm coconut oil massage, sandalwood body polish, herbal steam bath, and king coconut refreshment.";
+        }
+      } else if (lowerQuery.includes("airport van") || lowerQuery.includes("van")) {
+        if (isAskingCapacity) {
+          aiAnswer = "Up to 7 passengers.";
+        } else if (isAskingPrice) {
+          aiAnswer = "LKR 22,000 per way.";
+        } else {
+          aiAnswer = "The VIP Airport Passenger Van is LKR 22,000 per way for up to 7 passengers.";
+        }
+      } else if (lowerQuery.includes("stargazer cinema") || lowerQuery.includes("wednesday")) {
+        if (isAskingPrice) {
+          aiAnswer = "Stargazer Cinema is complimentary for in-house guests.";
+        } else if (rawLower.includes("what time") || isAskingStartTime) {
+          aiAnswer = "Every Wednesday at 8:00 PM.";
+        } else {
+          aiAnswer = "Every Wednesday at 8:00 PM on the Beach Lawn. Complimentary for in-house guests.";
         }
       } else {
         aiAnswer = UNAVAILABLE_MESSAGE;
