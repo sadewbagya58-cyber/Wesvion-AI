@@ -8,35 +8,32 @@ const serviceClient = createClient(url, serviceKey);
 
 async function runDemoV2Tests() {
   console.log("==================================================");
-  console.log("RUNNING DEMO-V2 KNOWLEDGE RETRIEVAL TEST MATRIX");
+  console.log("RUNNING DEMO-V2 MULTI-CHUNK RETRIEVAL TEST MATRIX");
   console.log("==================================================");
 
   const sessionId = "v2-test-session-" + Date.now();
 
   // Test A: Sunset Seafood Platter price
   console.log("\n[TEST A] Direct Question: How much is the Sunset Seafood Platter?");
-  const chunksA = await retrieveKnowledgeChunks("How much is the Sunset Seafood Platter?", { limit: 3 });
+  const chunksA = await retrieveKnowledgeChunks("How much is the Sunset Seafood Platter?", { limit: 5 });
   console.log(" -> Retrieved Chunks:", chunksA.length, "| Top Doc:", chunksA[0]?.documentTitle);
   if (chunksA.length === 0 || !chunksA[0].contentSnippet.includes("6,750")) {
     throw new Error("TEST A FAILED: Could not retrieve Sunset Seafood Platter chunk!");
   }
   console.log("-> TEST A PASSED!");
 
-  // Test B: Pronoun follow-up: What is included in it?
-  console.log("\n[TEST B] Follow-up: What is included in it?");
-  const chunksB = await retrieveKnowledgeChunks("What is included in the Sunset Seafood Platter?", {
-    preferredEntity: "Sunset Seafood Platter",
-    limit: 3,
-  });
-  console.log(" -> Retrieved Chunks:", chunksB.length);
-  if (!chunksB[0]?.contentSnippet.toLowerCase().includes("lobster")) {
-    throw new Error("TEST B FAILED: Follow-up query failed to retrieve menu ingredients!");
+  // Test B: Moonrise Mangrove Safari price (Multi-document / non-chunk0 test)
+  console.log("\n[TEST B] Direct Question: How much is the Moonrise Mangrove Safari?");
+  const chunksB = await retrieveKnowledgeChunks("How much is the Moonrise Mangrove Safari?", { limit: 5 });
+  console.log(" -> Retrieved Chunks:", chunksB.length, "| Top Doc:", chunksB[0]?.documentTitle);
+  if (chunksB.length === 0 || !chunksB[0].contentSnippet.includes("5,500")) {
+    throw new Error("TEST B FAILED: Could not retrieve Moonrise Mangrove Safari chunk across document chunks!");
   }
   console.log("-> TEST B PASSED!");
 
   // Test C: Spa Ritual price
   console.log("\n[TEST C] Direct Question: How much is the Serenity Coconut & Sandalwood Ritual?");
-  const chunksC = await retrieveKnowledgeChunks("How much is the Serenity Coconut & Sandalwood Ritual?", { limit: 3 });
+  const chunksC = await retrieveKnowledgeChunks("How much is the Serenity Coconut & Sandalwood Ritual?", { limit: 5 });
   console.log(" -> Retrieved Chunks:", chunksC.length, "| Top Doc:", chunksC[0]?.documentTitle);
   if (chunksC.length === 0 || !chunksC[0].contentSnippet.includes("9,800")) {
     throw new Error("TEST C FAILED: Could not retrieve Spa Ritual chunk!");
@@ -47,7 +44,7 @@ async function runDemoV2Tests() {
   console.log("\n[TEST D] Follow-up: What is included in it?");
   const chunksD = await retrieveKnowledgeChunks("What is included in the Serenity Coconut & Sandalwood Ritual?", {
     preferredEntity: "Serenity Coconut & Sandalwood Ritual",
-    limit: 3,
+    limit: 5,
   });
   console.log(" -> Retrieved Chunks:", chunksD.length);
   if (!chunksD[0]?.contentSnippet.toLowerCase().includes("coconut oil massage")) {
@@ -59,7 +56,7 @@ async function runDemoV2Tests() {
   console.log("\n[TEST E] Follow-up: How long does it take?");
   const chunksE = await retrieveKnowledgeChunks("How long does the Serenity Coconut & Sandalwood Ritual take?", {
     preferredEntity: "Serenity Coconut & Sandalwood Ritual",
-    limit: 3,
+    limit: 5,
   });
   console.log(" -> Retrieved Chunks:", chunksE.length);
   if (!chunksE[0]?.contentSnippet.includes("90 minutes")) {
@@ -69,7 +66,7 @@ async function runDemoV2Tests() {
 
   // Test F: Wednesday Event
   console.log("\n[TEST F] Direct Question: What happens every Wednesday at 8:00 PM?");
-  const chunksF = await retrieveKnowledgeChunks("What happens every Wednesday at 8:00 PM?", { limit: 3 });
+  const chunksF = await retrieveKnowledgeChunks("What happens every Wednesday at 8:00 PM?", { limit: 5 });
   console.log(" -> Retrieved Chunks:", chunksF.length);
   if (!chunksF[0]?.contentSnippet.includes("Stargazer Cinema")) {
     throw new Error("TEST F FAILED: Could not retrieve Stargazer Cinema event!");
@@ -80,7 +77,7 @@ async function runDemoV2Tests() {
   console.log("\n[TEST G] Event Follow-Up: Is that event free?");
   const chunksG = await retrieveKnowledgeChunks("Is the Stargazer Cinema event free?", {
     preferredEntity: "Stargazer Cinema",
-    limit: 3,
+    limit: 5,
   });
   console.log(" -> Retrieved Chunks:", chunksG.length);
   if (!chunksG[0]?.contentSnippet.toLowerCase().includes("complimentary")) {
@@ -90,7 +87,7 @@ async function runDemoV2Tests() {
 
   // Test H: Unsupported detail
   console.log("\n[TEST H] Unsupported detail: Is the spa ritual spicy?");
-  const chunksH = await retrieveKnowledgeChunks("Is the Serenity Coconut & Sandalwood Ritual spicy?", { limit: 3 });
+  const chunksH = await retrieveKnowledgeChunks("Is the Serenity Coconut & Sandalwood Ritual spicy?", { limit: 5 });
   const hasSpicyInSnippet = chunksH.some((c) => c.contentSnippet.toLowerCase().includes("spicy"));
   if (hasSpicyInSnippet) {
     throw new Error("TEST H FAILED: Found fabricated spicy keyword in document!");
@@ -141,7 +138,7 @@ async function runDemoV2Tests() {
   console.log("-> Cross-property isolation PASSED!");
 
   console.log("\n==================================================");
-  console.log("DEMO-V2 TEST MATRIX PASSED 100%!");
+  console.log("DEMO-V2 MULTI-CHUNK RETRIEVAL TEST MATRIX PASSED 100%!");
   console.log("==================================================");
 }
 

@@ -3,6 +3,7 @@ import { resolvePropertyIdBySlug } from "@/lib/propertyResolver";
 
 export interface RetrievedChunk {
   chunkId: string;
+  chunkIndex: number;
   documentId: string;
   documentTitle: string;
   documentCategory: string;
@@ -45,17 +46,19 @@ export async function retrieveKnowledgeChunks(
     const client = getSupabaseAdminClient();
     const propertyId = await resolvePropertyIdBySlug("aura-boutique-hotel");
 
+    // Load ALL active and ready chunks for the property without restrictive pre-scoring limits
     const { data: chunks, error } = await client
       .from("knowledge_chunks")
       .select(
-        "id, content, document_category, document_id, knowledge_documents!inner(id, title, active, processing_status)"
+        "id, chunk_index, content, document_category, document_id, knowledge_documents!inner(id, title, active, processing_status)"
       )
       .eq("property_id", propertyId)
       .eq("knowledge_documents.active", true)
       .eq("knowledge_documents.processing_status", "ready")
-      .limit(30);
+      .limit(200);
 
     if (error || !chunks || chunks.length === 0) {
+      console.log(`[Retrieval Engine Debug] User Query: "${query}" | Active Chunks Found: 0`);
       return [];
     }
 
@@ -63,12 +66,14 @@ export async function retrieveKnowledgeChunks(
     const entityTokens = options?.preferredEntity ? normalizeText(options.preferredEntity) : [];
     const rawQueryLower = query.toLowerCase().trim();
 
-    const scored = chunks.map((item) => {
+    // Score every chunk independently across all documents and chunk indexes
+    const scored: RetrievedChunk[] = chunks.map((item) => {
       let score = 0;
       const contentLower = item.content.toLowerCase();
       const docTitle = (item.knowledge_documents as unknown as { title: string }).title || "";
       const docTitleLower = docTitle.toLowerCase();
       const docId = (item.knowledge_documents as unknown as { id: string }).id;
+      const chunkIdx = typeof item.chunk_index === "number" ? item.chunk_index : 0;
 
       // 1. Same-source document bonus for follow-ups
       if (options?.preferredDocumentId && docId === options.preferredDocumentId) {
@@ -79,24 +84,25 @@ export async function retrieveKnowledgeChunks(
       if (entityTokens.length > 0) {
         for (const et of entityTokens) {
           if (contentLower.includes(et) || docTitleLower.includes(et)) {
-            score += 8;
+            score += 10;
           }
         }
       }
 
       // 3. Exact phrase match bonus
       if (rawQueryLower.length > 4 && contentLower.includes(rawQueryLower)) {
-        score += 20;
+        score += 25;
       }
 
       // 4. Token overlap matching
       for (const token of queryTokens) {
-        if (contentLower.includes(token)) score += 3;
-        if (docTitleLower.includes(token)) score += 5;
+        if (contentLower.includes(token)) score += 4;
+        if (docTitleLower.includes(token)) score += 6;
       }
 
       return {
         chunkId: item.id,
+        chunkIndex: chunkIdx,
         documentId: docId,
         documentTitle: docTitle || "Property Document",
         documentCategory: item.document_category || "general",
@@ -107,11 +113,27 @@ export async function retrieveKnowledgeChunks(
 
     const maxResults = options?.limit || 4;
 
-    return scored
+    // Rank all chunks by relevance
+    const rankedChunks = scored
       .filter((s) => s.score > 0 || chunks.length <= 2)
       .sort((a, b) => b.score - a.score)
       .slice(0, maxResults);
-  } catch {
+
+    // Detailed debug logging
+    console.log(`\n==================================================`);
+    console.log(`[Retrieval Engine Debug] User Query: "${query}"`);
+    console.log(`[Retrieval Engine Debug] Total Active Chunks Scored: ${chunks.length}`);
+    console.log(`[Retrieval Engine Debug] Top Ranked Chunks (${rankedChunks.length}):`);
+    rankedChunks.forEach((c, idx) => {
+      console.log(
+        `  Rank #${idx + 1} | ChunkID: ${c.chunkId} | ChunkIndex: ${c.chunkIndex} | Score: ${c.score} | Doc: "${c.documentTitle}"`
+      );
+    });
+    console.log(`==================================================\n`);
+
+    return rankedChunks;
+  } catch (err: unknown) {
+    console.error("[Retrieval Engine Debug] Error during retrieval:", err);
     return [];
   }
 }

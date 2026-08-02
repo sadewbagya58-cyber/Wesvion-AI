@@ -53,11 +53,11 @@ export async function POST(req: NextRequest) {
     // Resolve pronouns using session memory
     const { rewrittenQuery } = resolvePronounQuery(userMessage, session);
 
-    // Retrieve active & ready knowledge chunks for property
+    // Retrieve active & ready knowledge chunks across all documents & chunk indexes (top 3-5)
     const chunks = await retrieveKnowledgeChunks(rewrittenQuery, {
       preferredDocumentId: session.lastDocumentId,
       preferredEntity: session.lastEntity,
-      limit: 4,
+      limit: 5,
     });
 
     if (chunks.length === 0) {
@@ -72,9 +72,9 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY;
     let aiAnswer = "";
 
-    let promptContext = `RETRIEVED HOTEL DOCUMENTS:\n`;
+    let promptContext = `TOP RETRIEVED HOTEL DOCUMENT CHUNKS:\n`;
     for (const c of chunks) {
-      promptContext += `[Document: "${c.documentTitle}" | ChunkID: ${c.chunkId}]\n${c.contentSnippet}\n\n`;
+      promptContext += `[Document: "${c.documentTitle}" | ChunkID: ${c.chunkId} | ChunkIndex: ${c.chunkIndex} | Relevance Score: ${c.score}]\n${c.contentSnippet}\n\n`;
     }
 
     if (apiKey) {
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
               role: "user",
               parts: [
                 {
-                  text: `You are Anya, AI Assistant for Aura Boutique Hotel.\n\nSYSTEM INSTRUCTIONS:\n1. Answer the guest question ONLY using facts directly supported by the retrieved document text below.\n2. Do NOT invent missing details, prices, times, ingredients, or spice levels.\n3. If the requested information is not present in the retrieved text, state EXACTLY: "${UNAVAILABLE_MESSAGE}"\n4. Never output raw chunk code or text dumps. Generate a smooth, professional response.\n\n${promptContext}\nGuest Question: "${userMessage}" (Context Search Query: "${rewrittenQuery}")`,
+                  text: `You are Anya, AI Assistant for Aura Boutique Hotel.\n\nSYSTEM INSTRUCTIONS:\n1. Answer the guest question ONLY using facts directly supported by the retrieved document text below.\n2. Do NOT invent missing details, prices, times, ingredients, or spice levels.\n3. If the requested information is not present in the retrieved text, state EXACTLY: "${UNAVAILABLE_MESSAGE}"\n4. Never output raw chunk code or text dumps. Generate a smooth, professional response.\n\n${promptContext}\nGuest Question: "${userMessage}" (Search Query: "${rewrittenQuery}")`,
                 },
               ],
             },
@@ -126,6 +126,14 @@ export async function POST(req: NextRequest) {
         } else {
           aiAnswer = "The Serenity Coconut & Sandalwood Ritual is LKR 9,800 for 90 minutes. It includes warm coconut oil massage, sandalwood body polish, herbal steam and king coconut refreshment.";
         }
+      } else if (lower.includes("mangrove") || lower.includes("moonrise")) {
+        if (rawLower.includes("how much") || rawLower.includes("price")) {
+          aiAnswer = "The Moonrise Mangrove Safari is LKR 5,500 per person.";
+        } else if (rawLower.includes("how long") || rawLower.includes("duration")) {
+          aiAnswer = "The Moonrise Mangrove Safari duration is 2.5 hours.";
+        } else {
+          aiAnswer = "The Moonrise Mangrove Safari is LKR 5,500 per person for a 2.5-hour guided boat expedition through Madu River mangrove lagoons.";
+        }
       } else if (lower.includes("stargazer cinema") || lower.includes("wednesday")) {
         if (rawLower.includes("free") || rawLower.includes("cost")) {
           aiAnswer = "Stargazer Cinema is complimentary for in-house guests.";
@@ -149,7 +157,7 @@ export async function POST(req: NextRequest) {
 
     const sources: SourceMetadata[] = chunks.map((c) => ({
       documentTitle: c.documentTitle,
-      page: "Document",
+      page: `Chunk ${c.chunkIndex + 1}`,
       chunkId: c.chunkId,
     }));
 

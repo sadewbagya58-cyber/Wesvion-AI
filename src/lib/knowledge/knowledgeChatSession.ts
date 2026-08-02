@@ -36,7 +36,7 @@ export function resetKnowledgeSession(sessionId: string): KnowledgeDemoSession {
   return fresh;
 }
 
-const PRONOUN_REGEX = /\b(it|this|that|they|those|the room|the package|the platter|the ritual|the event|the van|that one)\b/i;
+const PRONOUN_REGEX = /\b(it|this|that|they|those|the room|the package|the platter|the ritual|the event|the van|the safari|the tour|that one)\b/i;
 
 const SHORT_FOLLOWUP_STARTS = [
   "what is included",
@@ -93,6 +93,10 @@ export function extractEntityFromContent(userMessage: string, replyText: string)
 
   if (combined.includes("serenity coconut") || combined.includes("sandalwood ritual") || combined.includes("spa ritual")) {
     return "Serenity Coconut & Sandalwood Ritual";
+  }
+
+  if (combined.includes("mangrove") || combined.includes("moonrise")) {
+    return "Moonrise Mangrove Safari";
   }
 
   if (combined.includes("stargazer cinema") || combined.includes("wednesday")) {
